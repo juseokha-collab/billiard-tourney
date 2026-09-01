@@ -1,0 +1,1549 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>브레이크 & 컴백</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700;800&family=Libre+Franklin:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap">
+
+<style>
+:root{
+  --bg:#f2ead9;
+  --bg-soft:#e9dfc6;
+  --surface:#fffdf7;
+  --surface-2:#f7efdc;
+  --ink:#1e2a1f;
+  --ink-soft:#5c5946;
+  --felt:#0f5132;
+  --felt-deep:#0a3a24;
+  --felt-ink:#eef2e6;
+  --gold:#a9761f;
+  --gold-soft:#e9cf9a;
+  --wb:#2f6fa8;
+  --wb-soft:#dceaf6;
+  --lb:#a83f26;
+  --lb-soft:#f6ddd0;
+  --line:rgba(30,42,31,0.16);
+  --shadow:rgba(15,30,20,0.20);
+  --good:#2f7d4f;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0b2118;
+    --bg-soft:#0f2b1e;
+    --surface:#123526;
+    --surface-2:#163f2b;
+    --ink:#eef2e6;
+    --ink-soft:#b6c2b2;
+    --felt:#1c7a4c;
+    --felt-deep:#0a3a24;
+    --felt-ink:#eef2e6;
+    --gold:#e0b354;
+    --gold-soft:#3a2c12;
+    --wb:#7ab6e6;
+    --wb-soft:#173247;
+    --lb:#e08a6b;
+    --lb-soft:#3a2016;
+    --line:rgba(238,242,230,0.16);
+    --shadow:rgba(0,0,0,0.55);
+    --good:#5cc98a;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0b2118;
+  --bg-soft:#0f2b1e;
+  --surface:#123526;
+  --surface-2:#163f2b;
+  --ink:#eef2e6;
+  --ink-soft:#b6c2b2;
+  --felt:#1c7a4c;
+  --felt-deep:#0a3a24;
+  --felt-ink:#eef2e6;
+  --gold:#e0b354;
+  --gold-soft:#3a2c12;
+  --wb:#7ab6e6;
+  --wb-soft:#173247;
+  --lb:#e08a6b;
+  --lb-soft:#3a2016;
+  --line:rgba(238,242,230,0.16);
+  --shadow:rgba(0,0,0,0.55);
+  --good:#5cc98a;
+}
+
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:
+    radial-gradient(1200px 600px at 50% -10%, color-mix(in srgb, var(--felt) 14%, transparent), transparent 60%),
+    var(--bg);
+  color:var(--ink);
+  font-family:'Libre Franklin',system-ui,-apple-system,'Segoe UI',sans-serif;
+  line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3,.display{
+  font-family:'Big Shoulders Display','Segoe UI',sans-serif;
+  text-wrap:balance;
+  letter-spacing:0.01em;
+}
+.mono{font-family:'Space Mono',ui-monospace,monospace; font-variant-numeric:tabular-nums;}
+
+a{color:inherit;}
+button{font-family:inherit;}
+
+.wrap{max-width:1180px;margin:0 auto;padding:0 20px 80px;}
+
+/* ---------- auth bar ---------- */
+.auth-bar{
+  display:flex; align-items:center; justify-content:flex-end; gap:10px;
+  padding:8px 20px; background:var(--felt-deep); color:var(--felt-ink); font-size:0.78rem;
+}
+.auth-status{opacity:0.88;}
+.auth-btn{
+  background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.25); color:inherit;
+  border-radius:8px; padding:5px 10px; font-size:0.76rem; font-weight:700; cursor:pointer;
+  transition:background .15s;
+}
+.auth-btn:hover{background:rgba(255,255,255,0.22);}
+
+/* ---------- Hero / sticky bar ---------- */
+.hero{
+  background:
+    repeating-linear-gradient(115deg, rgba(255,255,255,0.05) 0 2px, transparent 2px 6px),
+    linear-gradient(160deg, var(--felt) 0%, var(--felt-deep) 100%);
+  color:var(--felt-ink);
+  padding:44px 20px 84px;
+  position:relative;
+  overflow:hidden;
+}
+.hero::after{
+  content:"";
+  position:absolute; inset:auto 0 0 0; height:70px;
+  background:linear-gradient(to top, var(--bg), transparent);
+  pointer-events:none;
+}
+.hero-inner{
+  max-width:1180px;margin:0 auto; position:relative; z-index:1;
+  display:flex; align-items:flex-start; justify-content:space-between; gap:32px; flex-wrap:wrap;
+}
+.hero-left{flex:1 1 320px; min-width:0;}
+.eyebrow{
+  display:inline-flex; align-items:center; gap:8px;
+  font-size:0.78rem; letter-spacing:0.14em; text-transform:uppercase;
+  font-weight:700; color:var(--gold-soft);
+  background:rgba(0,0,0,0.18);
+  border:1px solid rgba(255,255,255,0.18);
+  padding:5px 12px; border-radius:999px;
+}
+.hero h1{
+  font-size:clamp(2.4rem, 5vw, 4rem);
+  font-weight:800;
+  margin:16px 0 6px;
+  line-height:0.98;
+}
+.hero p.sub{
+  font-size:0.92rem; color:rgba(238,242,230,0.82); max-width:56ch; margin:0;
+}
+.hero .balls-row{
+  display:flex; gap:8px; margin-top:22px; flex-wrap:wrap;
+}
+.mini-ball{
+  width:26px;height:26px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Space Mono',monospace; font-weight:700; font-size:0.72rem;
+  box-shadow: inset 0 -3px 4px rgba(0,0,0,0.35), inset 0 2px 3px rgba(255,255,255,0.35), 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.hero-fixtures{
+  flex:0 1 360px; min-width:270px;
+  background:rgba(0,0,0,0.18); border:1px solid rgba(255,255,255,0.14);
+  border-radius:16px; padding:16px 18px;
+}
+.mode-toggle{
+  display:block; width:100%; margin-bottom:12px;
+  background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.22);
+  color:var(--felt-ink); border-radius:9px; padding:7px 10px;
+  font-size:0.76rem; font-weight:700; cursor:pointer; text-align:center;
+  transition:background .15s;
+}
+.mode-toggle:hover{background:rgba(255,255,255,0.16);}
+.mode-toggle.active{background:var(--gold); border-color:var(--gold); color:#241c00;}
+.fixtures-title{
+  font-family:'Big Shoulders Display','Segoe UI',sans-serif;
+  font-size:0.92rem; font-weight:700; text-transform:uppercase; letter-spacing:0.12em;
+  color:var(--gold-soft); margin-bottom:12px;
+}
+.fixtures-list{
+  display:grid; grid-template-columns:auto auto 1fr;
+  column-gap:10px; row-gap:10px; align-items:center;
+  max-height:240px; overflow-y:auto;
+}
+.fixture-ball{
+  width:22px;height:22px;border-radius:50%; flex:none;
+  background:#c0392b; color:#fff;
+  display:flex; align-items:center; justify-content:center;
+  font-family:'Space Mono',monospace; font-weight:700; font-size:0.66rem;
+  box-shadow: inset 0 -2px 3px rgba(0,0,0,0.35), inset 0 1px 2px rgba(255,255,255,0.3);
+}
+.fixture-date{
+  font-family:'Space Mono',monospace; font-size:0.7rem; font-weight:700;
+  color:var(--gold-soft); white-space:nowrap;
+}
+.fixture-date.unset{color:rgba(238,242,230,0.48); font-weight:400;}
+.fixture-vs{
+  font-size:0.77rem; font-weight:400; color:var(--felt-ink);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.fixtures-empty{
+  grid-column:1 / -1; font-size:0.82rem; color:rgba(238,242,230,0.55);
+}
+
+/* ---------- pot bar ---------- */
+.potbar{
+  margin:-52px auto 0;
+  max-width:1180px;
+  padding:0 20px;
+  position:relative; z-index:2;
+}
+.potcard{
+  background:var(--surface);
+  border:1px solid var(--line);
+  border-radius:18px;
+  box-shadow:0 18px 40px -18px var(--shadow);
+  padding:20px 24px;
+  display:flex; flex-wrap:wrap; align-items:center; gap:20px 32px;
+}
+.pot-figure{display:flex; flex-direction:column; gap:2px;}
+.pot-figure .label{font-size:0.72rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--ink-soft); font-weight:700;}
+.pot-figure .amount{font-size:2.1rem; font-weight:800; font-family:'Big Shoulders Display'; color:var(--gold); line-height:1;}
+.pot-figure .amount .won{font-size:1.1rem; margin-left:4px; font-family:'Libre Franklin'; font-weight:700;}
+.pot-meta{font-size:0.85rem; color:var(--ink-soft);}
+.funding-control{
+  margin-left:auto;
+  display:flex; align-items:center; gap:10px;
+  background:var(--surface-2); border:1px solid var(--line); border-radius:12px;
+  padding:8px 12px;
+}
+.funding-control label{font-size:0.78rem; font-weight:700; color:var(--ink-soft); white-space:nowrap;}
+.funding-control input{
+  width:100px; border:none; background:transparent; color:var(--ink);
+  font-family:'Space Mono',monospace; font-size:1rem; font-weight:700;
+  outline:none; text-align:right;
+}
+.funding-control input:disabled{opacity:0.55;}
+.funding-control .unit{color:var(--ink-soft); font-size:0.85rem;}
+.funding-control.option-note{color:var(--ink-soft); font-size:0.8rem; font-weight:700;}
+.reset-btn{
+  border:1px solid var(--line); background:var(--surface-2); color:var(--ink-soft);
+  border-radius:10px; padding:9px 14px; font-size:0.8rem; font-weight:700; cursor:pointer;
+  transition:background .15s, color .15s;
+}
+.reset-btn:hover{background:var(--lb-soft); color:var(--lb);}
+.reset-btn:focus-visible, button:focus-visible, input:focus-visible{outline:2px solid var(--wb); outline-offset:2px;}
+
+/* ---------- sections ---------- */
+section{margin-top:56px;}
+.section-head{display:flex; align-items:baseline; gap:12px; margin-bottom:18px; flex-wrap:wrap;}
+.section-head h2{font-size:1.6rem; font-weight:800; margin:0;}
+.section-head .count{font-size:0.85rem; color:var(--ink-soft);}
+.section-note{font-size:0.85rem; color:var(--ink-soft); margin:-8px 0 18px; max-width:70ch;}
+.readonly-banner{
+  background:var(--gold-soft); color:#241c00; border:1px solid var(--gold);
+  border-radius:12px; padding:12px 16px; font-size:0.85rem; font-weight:700;
+  margin-top:24px;
+}
+
+/* ---------- seeding table ---------- */
+.seed-table-wrap{
+  background:var(--surface); border:1px solid var(--line); border-radius:16px;
+  overflow-x:auto; box-shadow:0 10px 30px -20px var(--shadow);
+}
+table.seed{border-collapse:collapse; width:100%; min-width:840px;}
+table.seed th, table.seed td{padding:12px 14px; text-align:left; border-bottom:1px solid var(--line); font-size:0.9rem;}
+table.seed th{
+  font-size:0.72rem; text-transform:uppercase; letter-spacing:0.08em; color:var(--ink-soft);
+  background:var(--surface-2); position:sticky; top:0;
+}
+table.seed tbody tr:last-child td{border-bottom:none;}
+table.seed tbody tr:hover{background:var(--surface-2);}
+td.num, th.num{text-align:right; font-family:'Space Mono',monospace;}
+.name-cell{display:flex; align-items:center; gap:10px; font-weight:700;}
+.ball{
+  width:30px;height:30px;border-radius:50%; flex:none;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Space Mono',monospace; font-weight:700; font-size:0.78rem;
+  box-shadow: inset 0 -3px 5px rgba(0,0,0,0.35), inset 0 2px 3px rgba(255,255,255,0.4), 0 2px 5px rgba(0,0,0,0.25);
+}
+.record-w{color:var(--good); font-weight:700;}
+.record-l{color:var(--lb); font-weight:700;}
+.funding-sub{font-size:0.7rem; color:var(--ink-soft); font-family:'Space Mono',monospace;}
+
+/* ---------- info toggle ---------- */
+details.info{
+  background:var(--surface-2); border:1px solid var(--line); border-radius:12px;
+  padding:12px 16px; margin-bottom:18px; font-size:0.86rem; color:var(--ink-soft);
+}
+details.info summary{cursor:pointer; font-weight:700; color:var(--ink); list-style:none; display:flex; align-items:center; gap:8px;}
+details.info summary::-webkit-details-marker{display:none;}
+details.info summary::before{content:"▸"; transition:transform .15s; display:inline-block;}
+details.info[open] summary::before{transform:rotate(90deg);}
+details.info p{margin:10px 0 0;}
+details.info p + p{margin-top:8px;}
+
+/* ---------- bracket tree: open match as a horizontal spine, WB rounds
+   stacking upward above it, LB rounds stacking downward below it ---------- */
+.bracket-tree{display:flex; flex-direction:column; gap:26px;}
+.band-head{display:flex; align-items:center; gap:10px; margin-bottom:12px;}
+.band-dot{width:12px;height:12px;border-radius:50%; flex:none;}
+.band-dot.wb{background:var(--wb);}
+.band-dot.lb{background:var(--lb);}
+.band-dot.open{background:var(--gold);}
+.band-head h3{font-size:1.05rem; margin:0; font-weight:800;}
+.band.wb .band-head h3{color:var(--wb);}
+.band.lb .band-head h3{color:var(--lb);}
+.band.open .band-head h3{color:var(--gold);}
+.band-matches{
+  display:flex; gap:10px; flex-wrap:wrap;
+}
+.band.open .band-matches{justify-content:center;}
+.band-matches .match-card{flex:1 1 190px; max-width:210px;}
+.spine{
+  height:2px; background:linear-gradient(90deg, transparent, var(--gold-soft), transparent);
+  margin:2px 0;
+}
+
+.match-card{
+  background:var(--surface); border:1px solid var(--line); border-radius:12px;
+  padding:9px; box-shadow:0 8px 22px -16px var(--shadow);
+}
+.match-card.bye{background:var(--surface-2); border-style:dashed;}
+.match-card .bye-text{font-size:0.8rem; color:var(--ink-soft); display:flex; align-items:center; gap:6px; padding:4px 2px;}
+.kind-label{font-size:0.64rem; font-weight:700; color:var(--gold); text-transform:uppercase; letter-spacing:0.03em; margin-bottom:4px;}
+.player-row{
+  display:flex; align-items:center; gap:5px; padding:3px 2px; border-radius:7px;
+}
+.player-row .pname{flex:1; font-weight:600; font-size:0.82rem; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.player-row .pname .ppoint{font-weight:700; font-size:0.7rem; color:var(--ink-soft);}
+.player-row .pball{width:18px;height:18px;border-radius:50%;flex:none; box-shadow: inset 0 -2px 3px rgba(0,0,0,0.35), 0 1px 3px rgba(0,0,0,0.25); display:flex;align-items:center;justify-content:center;font-size:0.6rem;font-family:'Space Mono',monospace;font-weight:700;}
+.score-input{
+  width:34px; text-align:center; border:1px solid var(--line); border-radius:6px;
+  background:var(--surface-2); color:var(--ink); font-family:'Space Mono',monospace;
+  font-weight:700; padding:3px 2px; font-size:0.78rem; flex:none;
+  -moz-appearance:textfield;
+  appearance:textfield;
+}
+.score-input::-webkit-outer-spin-button,
+.score-input::-webkit-inner-spin-button{
+  -webkit-appearance:none;
+  margin:0;
+}
+.player-row.winner{background:var(--wb-soft);}
+.band.lb .player-row.winner{background:var(--lb-soft);}
+.player-row.winner .pname::after{content:" ✓"; color:var(--good); font-weight:800;}
+.player-row.loser{opacity:0.55;}
+.score-fixed{width:34px; text-align:center; font-family:'Space Mono',monospace; font-weight:700; flex:none;}
+.match-actions{display:flex; gap:6px; margin-top:8px; flex-wrap:wrap; align-items:center;}
+.btn{
+  border:none; border-radius:8px; padding:7px 12px; font-size:0.8rem; font-weight:700; cursor:pointer;
+  transition:filter .15s, transform .1s;
+}
+.btn:active{transform:scale(0.97);}
+.btn-confirm{background:var(--felt); color:var(--felt-ink);}
+.btn-confirm:disabled{opacity:0.4; cursor:not-allowed;}
+.btn-confirm:not(:disabled):hover{filter:brightness(1.1);}
+.btn-edit{background:transparent; color:var(--ink-soft); border:1px solid var(--line);}
+.btn-edit:hover{color:var(--ink);}
+.match-actions-done{align-items:center;}
+.btn-icon{
+  background:transparent; color:var(--ink-soft); border:1px solid var(--line);
+  padding:4px 7px; font-size:0.82rem; line-height:1; border-radius:7px; flex:none;
+}
+.btn-icon:hover{color:var(--ink); border-color:var(--ink-soft);}
+.gf-match .btn-icon{border-color:rgba(255,255,255,0.3); color:rgba(238,242,230,0.85);}
+.kind-label-inline{
+  font-size:0.64rem; font-weight:700; color:var(--gold); text-transform:uppercase;
+  letter-spacing:0.02em; line-height:1.25;
+}
+.sched-chip{
+  font-size:0.7rem; font-weight:800; color:var(--felt-ink); background:var(--gold);
+  border-radius:999px; padding:3px 9px; cursor:pointer; white-space:nowrap; line-height:1.3;
+  margin-left:auto;
+}
+.sched-chip:hover{filter:brightness(1.08);}
+.gf-match .sched-chip{background:var(--gold-soft); color:#241c00;}
+.sched-inline{display:inline-flex; align-items:center; gap:4px; flex-wrap:wrap; margin-left:auto;}
+.sched-date{
+  width:26px; border:1px solid var(--line); border-radius:6px; background:var(--surface-2);
+  color:transparent; font-size:0.68rem; padding:3px; flex:none;
+}
+.gf-match .sched-date{background:rgba(0,0,0,0.25); border-color:rgba(255,255,255,0.22);}
+.sched-session{
+  border:1px solid var(--line); background:transparent; color:var(--ink-soft);
+  border-radius:6px; padding:3px 7px; font-size:0.68rem; font-weight:700; cursor:pointer; flex:none;
+}
+.sched-session:hover{color:var(--ink);}
+.gf-match .sched-session{border-color:rgba(255,255,255,0.3); color:rgba(238,242,230,0.85);}
+.match-note{font-size:0.7rem; color:var(--ink-soft); margin-top:6px;}
+.match-hint{font-size:0.72rem; color:var(--ink-soft); margin:6px 2px 8px;}
+.gf-match .match-hint{color:rgba(238,242,230,0.7);}
+.validation{font-size:0.72rem; color:var(--lb); margin-top:4px; min-height:1em;}
+.gf-match .validation{color:var(--gold-soft);}
+
+.empty-track{
+  font-size:0.88rem; color:var(--ink-soft); padding:20px; background:var(--surface-2);
+  border:1px dashed var(--line); border-radius:14px;
+}
+
+/* ---------- grand final ---------- */
+.gf-panel{
+  background:linear-gradient(160deg, var(--felt) 0%, var(--felt-deep)100%);
+  color:var(--felt-ink); border-radius:20px; padding:28px; position:relative; overflow:hidden;
+}
+.gf-panel::before{
+  content:"🎱"; position:absolute; font-size:9rem; opacity:0.07; right:-16px; top:-30px; transform:rotate(-12deg);
+}
+.gf-panel h3{margin:0 0 4px; font-size:1.5rem;}
+.gf-panel .gf-sub{color:rgba(238,242,230,0.75); font-size:0.88rem; margin-bottom:18px;}
+.gf-matches{display:flex; gap:16px; flex-wrap:wrap; position:relative; z-index:1;}
+.gf-match{
+  background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.16);
+  border-radius:14px; padding:14px; flex:1 1 260px; min-width:240px;
+}
+.gf-match .gf-label{font-size:0.72rem; text-transform:uppercase; letter-spacing:0.08em; font-weight:700; color:var(--gold-soft); margin-bottom:8px;}
+.gf-match .player-row{background:rgba(255,255,255,0.04);}
+.gf-match .player-row.winner{background:rgba(233,207,154,0.22);}
+.gf-match .score-input{background:rgba(0,0,0,0.25); border-color:rgba(255,255,255,0.22); color:var(--felt-ink);}
+.gf-match .btn-edit{border-color:rgba(255,255,255,0.3); color:rgba(238,242,230,0.8);}
+
+/* ---------- result / champion reveal ---------- */
+.result-panel{
+  background:var(--surface); border:2px solid var(--gold); border-radius:22px;
+  padding:32px; text-align:center; position:relative; overflow:hidden;
+  box-shadow:0 30px 60px -30px var(--shadow);
+}
+.mode-explain{
+  margin-top:18px; font-size:0.78rem; color:var(--ink-soft); text-align:left;
+  border-top:1px solid var(--line); padding-top:14px;
+}
+.mode-badge{
+  display:inline-block; background:var(--gold); color:var(--felt-ink);
+  font-size:0.72rem; font-weight:800; letter-spacing:0.06em; text-transform:uppercase;
+  border-radius:999px; padding:4px 12px; margin-bottom:14px; position:relative; z-index:1;
+}
+.result-panel .crown{font-size:2.6rem; display:block; margin-bottom:6px;}
+.result-panel .champ-name{font-size:clamp(2rem,5vw,3rem); font-weight:800; margin:0; font-family:'Big Shoulders Display'; color:var(--gold);}
+.result-panel .champ-tag{font-size:0.9rem; color:var(--ink-soft); margin-top:4px;}
+.prize-grid{
+  display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:16px; margin-top:28px; text-align:left;
+}
+.prize-card{
+  background:var(--surface-2); border:1px solid var(--line); border-radius:14px; padding:16px;
+}
+.prize-card .pct{font-family:'Big Shoulders Display'; font-size:2rem; font-weight:800; color:var(--gold); line-height:1;}
+.prize-card .amt{font-family:'Space Mono',monospace; font-weight:700; font-size:1.1rem; margin-top:4px;}
+.prize-card .who{font-weight:700; margin-top:8px;}
+.prize-card .why{font-size:0.78rem; color:var(--ink-soft); margin-top:4px;}
+.prize-final{
+  display:flex; justify-content:space-between; align-items:flex-end; gap:10px;
+  margin-top:12px; padding-top:12px; border-top:1px solid var(--line);
+}
+.prize-final + .prize-final{margin-top:8px; padding-top:8px;}
+.pf-block{min-width:0;}
+.pf-right{text-align:right;}
+.pf-name{font-size:0.78rem; font-weight:700; margin-top:12px; display:flex; align-items:center; gap:6px;}
+.pf-name + .prize-final{margin-top:6px; padding-top:0; border-top:none;}
+.pf-label{font-size:0.68rem; color:var(--ink-soft); white-space:nowrap;}
+.pf-amt{font-size:1.05rem; font-weight:800; color:var(--ink); margin-top:2px;}
+.pf-right .pf-amt{color:var(--gold);}
+.confetti-dot{
+  position:absolute; width:8px;height:8px;border-radius:2px; top:-10px;
+  animation:fall linear infinite;
+}
+@keyframes fall{to{transform:translateY(420px) rotate(360deg); opacity:0;}}
+@media (prefers-reduced-motion: reduce){
+  .confetti-dot{display:none;}
+  *{animation-duration:0.001ms !important;}
+}
+
+footer.foot{margin-top:70px; text-align:center; font-size:0.78rem; color:var(--ink-soft);}
+
+@media (max-width:600px){
+  .hero{padding:34px 16px 70px;}
+  .potbar{margin-top:-46px;}
+  .funding-control{margin-left:0;}
+  .band-matches .match-card{flex-basis:100%; max-width:none;}
+  .hero-fixtures{flex-basis:100%; min-width:0;}
+}
+</style>
+</head>
+<body>
+
+<div class="auth-bar">
+  <span class="auth-status" id="authStatus">불러오는 중…</span>
+  <button type="button" class="auth-btn" id="loginBtn" style="display:none;">구글 로그인</button>
+  <button type="button" class="auth-btn" id="logoutBtn" style="display:none;">로그아웃</button>
+</div>
+
+<div class="hero">
+  <div class="hero-inner">
+    <div class="hero-left">
+      <span class="eyebrow">🎱 GUCCI · 2026 결산 토너먼트</span>
+      <h1>브레이크 &amp; 컴백</h1>
+      <p class="sub">게임수 → 승수 → 평균타율 순 조편성<br>승자조·패자조가 함께 굴러가는 새로운 경기방식!</p>
+      <div class="balls-row" id="heroBalls"></div>
+    </div>
+    <div class="hero-fixtures">
+      <button type="button" class="mode-toggle" id="modeToggle" style="display:none;">⚙ 옵션 게임 보기</button>
+      <div class="fixtures-title">Upcoming fixtures</div>
+      <div class="fixtures-list" id="fixturesList"></div>
+    </div>
+  </div>
+</div>
+
+<div class="potbar">
+  <div class="potcard">
+    <div class="pot-figure">
+      <span class="label" id="potLabel">누적 상금 (POT)</span>
+      <span class="amount mono" id="potAmount">0<span class="won">원</span></span>
+    </div>
+    <div class="pot-meta" id="potMeta">아직 확정된 경기가 없습니다.</div>
+    <div class="funding-control" id="fundingControl">
+      <label for="fundingInput">승자 펀딩</label>
+      <input id="fundingInput" type="number" min="0" step="1000" inputmode="numeric">
+      <span class="unit">원 / 게임</span>
+    </div>
+    <div class="funding-control option-note" id="optionNote" style="display:none;"></div>
+    <button class="reset-btn" id="resetBtn" type="button">토너먼트 초기화</button>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <div class="readonly-banner" id="readOnlyBanner" style="display:none;">
+    🔒 이 화면은 보기 전용입니다 — 대진표는 실시간으로 반영되지만, 결과 입력·확정은 지정된 관리자 계정으로 로그인해야 저장할 수 있어요.
+  </div>
+
+  <section id="resultSection" style="display:none;"></section>
+
+  <section id="gfSection" style="display:none;">
+    <div class="section-head"><h2>결승</h2></div>
+    <div class="gf-panel">
+      <h3>승자조 챔피언 vs 패자조 챔피언</h3>
+      <div class="gf-sub">패자조 챔피언은 이미 한 번 졌기 때문에, 여기서 지면 탈락입니다. 승자조 챔피언이 지면 아직 탈락이 아니므로 리셋 매치가 한 번 더 열립니다.</div>
+      <div class="gf-matches" id="gfMatches"></div>
+    </div>
+  </section>
+
+  <section id="bracketSection">
+    <div class="section-head"><h2>대진표</h2></div>
+    <div class="section-note">오픈대전 승자는 승자조, 패자는 패자조로 확정되고 그 뒤로는 서로 섞이지 않습니다.<br>— 승자조는 위로, 패자조는 아래로 각자 리그전을 이어갑니다.<br>— 다음 라운드는 현재 라운드 결과가 모두 확정되면 자동으로 생성됩니다.</div>
+    <div class="bracket-tree" id="bracketTree"></div>
+  </section>
+
+  <section id="seedSection">
+    <div class="section-head"><h2>조편성 &amp; 시드</h2><span class="count">10명</span></div>
+    <details class="info">
+      <summary>시드 산정 방식</summary>
+      <p>① 게임수가 많은 순 → ② 게임수가 같으면 최근전적 승수가 많은 순 → ③ 그래도 같으면 평균타율이 높은 순으로 정렬합니다.</p>
+      <p>1라운드는 <b>1위-2위, 3위-4위 …</b> 시드 순서로 대진합니다. <b>1라운드 승자는 승자조, 패자는 패자조로 확정</b>되고, 그 뒤로는 완전히 독립적으로 진행됩니다 — 승자조에서 지더라도 패자조로 내려가지 않고, 승자조·패자조 각자 안에서 이후 라운드는 남은 인원을 <b>점수(핸디캡)가 높은 순</b>으로 이어 붙여 짝짓는 같은 방식으로 리그전을 이어가 각 조의 우승자를 가립니다.</p>
+      <p>오픈대전 중 <b>가장 아슬아슬하게 결정된 경기</b>의 승자·패자는 각자 조에서 1차전 없이 2차전으로 바로 올라가 대기합니다. 판정 기준은 ① 패자의 자기 점수와 실제 결과 점수 차이가 가장 적은 경기 → ② 동률이면 패자의 점수가 더 낮은 경기 → ③ 그래도 동률이면 승자의 점수가 더 높은 경기 순입니다. 나머지 인원은 <b>패자끼리 패자부활전</b>을 치러 그 승자가 대기 중인 조에게 도전하고, 이 결과가 이번 라운드에 표시됩니다. <b>승자끼리</b> 붙는 직행전은 패자부활전 결과를 기다릴 필요가 없어서 한 라운드 먼저 확정되는 경우가 많은데, 그래서 다음 라운드 칸에 따로 표시됩니다 — 대기하던 조도 반드시 한 경기는 치러야 올라갈 수 있고, 진 사람도 한 번 더 뛸 기회를 얻습니다.</p>
+    </details>
+    <div class="seed-table-wrap">
+      <table class="seed">
+        <thead>
+          <tr>
+            <th class="num">시드</th>
+            <th>선수</th>
+            <th class="num" id="fundingColHead">펀딩</th>
+            <th>토너먼트</th>
+            <th class="num">점수</th>
+            <th class="num">평균타율</th>
+            <th>최근전적</th>
+            <th class="num">게임수</th>
+          </tr>
+        </thead>
+        <tbody id="seedBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer class="foot">전적·점수는 이 링크를 보는 모두에게 실시간으로 동기화됩니다 · 확정·수정은 지정된 관리자 계정만 저장할 수 있습니다 · 게임비는 상금 풀과 별개로 패자가 별도 정산</footer>
+</div>
+
+<script src="firebase-config.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+<script>
+(function(){
+"use strict";
+
+var PLAYERS = [
+  {name:"하주석", point:25, avg:0.489, w:3, l:5, games:8},
+  {name:"강경룡", point:22, avg:0.382, w:8, l:4, games:12},
+  {name:"김성준", point:18, avg:0.269, w:0, l:1, games:1},
+  {name:"김재형", point:19, avg:0.316, w:1, l:1, games:2},
+  {name:"김한균", point:22, avg:0.443, w:1, l:3, games:4},
+  {name:"김명재", point:21, avg:0.394, w:24, l:14, games:36},
+  {name:"서용래", point:25, avg:0.447, w:10, l:7, games:17},
+  {name:"신우진", point:29, avg:0.694, w:18, l:6, games:24},
+  {name:"함종훈", point:22, avg:0.391, w:4, l:6, games:10},
+  {name:"정정훈", point:21, avg:0.312, w:3, l:9, games:12}
+];
+
+var BALLS = [
+  {bg:"#f3c623", fg:"#241c00"},
+  {bg:"#2f6fa8", fg:"#eef2e6"},
+  {bg:"#c0392b", fg:"#eef2e6"},
+  {bg:"#6c3fa0", fg:"#eef2e6"},
+  {bg:"#e07b1f", fg:"#241c00"},
+  {bg:"#2f7d4f", fg:"#eef2e6"},
+  {bg:"#7a3b2e", fg:"#eef2e6"},
+  {bg:"#1c1c1c", fg:"#eef2e6"},
+  {bg:"#d4af37", fg:"#241c00"},
+  {bg:"#3a8fa0", fg:"#eef2e6"}
+];
+
+// Only these Google accounts may write results -- everyone else (logged in
+// or not) gets a live, read-only view. This is UX-level only: the real
+// enforcement lives in the Firestore security rules for this collection,
+// which check request.auth.token.email against the same list.
+var ALLOWED_EDITORS = ["juseok.ha@gmail.com", "kyunyworld82@gmail.com"];
+
+var currentUser = null;
+function canEdit(){
+  return !!(currentUser && currentUser.email &&
+    ALLOWED_EDITORS.indexOf(currentUser.email.toLowerCase()) > -1);
+}
+
+// Two "옵션 게임" what-if prize-math simulations laid over the exact same
+// match results -- neither ever touches state.results/funding/schedule, so
+// they're purely local to this viewer (not synced to Firestore).
+// displayMode cycles: "classic" -> "flat" (fixed Credit/win) -> "margin"
+// (Credit scaled by how close the loser fell short) -> back to "classic".
+var OPTION_ENTRY_FEE = 30000;
+var FLAT_CREDIT_RATE = 10000;
+var MODE_KEY = "billiard-tourney-2026-mode";
+var MODE_ORDER = ["classic", "flat", "margin"];
+// The option-game toggle is currently hidden from the UI, so always start
+// (and stay) on the classic view regardless of any mode saved earlier.
+var displayMode = "classic";
+
+// Margin-mode Credit: the winner is paid per point the loser fell short of
+// their own target, at a rate that steps up the further behind they were --
+// 1-2 remaining = 2,000/pt, 3-4 = 3,000/pt, 5+ = 4,000/pt.
+function marginRate(remaining){
+  if(remaining <= 2) return 2000;
+  if(remaining <= 4) return 3000;
+  return 4000;
+}
+function marginCreditFor(remaining){
+  return remaining * marginRate(remaining);
+}
+
+// Every participant pays a flat entry fee up front; each win pays the
+// winner a Credit out of that fund (amount depends on the mode). What's
+// left over after all Credits paid out is what gets split as the final
+// prizes. Returns null in classic mode, where there's no Credit concept.
+function computeCreditInfo(bracket){
+  if(displayMode === "classic") return null;
+  var perPlayer = {};
+  SEEDED.forEach(function(p){ perPlayer[p.seed] = 0; });
+  var totalCredit = 0;
+  function apply(m){
+    if(!m || m.bye || m.waiting || !m.confirmed || !m.p2) return;
+    var loserScore = (m.winner === m.p1) ? m.score2 : m.score1;
+    var credit;
+    if(displayMode === "flat"){
+      credit = FLAT_CREDIT_RATE;
+    } else {
+      var remaining = m.loser.point - loserScore;
+      credit = marginCreditFor(remaining);
+    }
+    perPlayer[m.winner.seed] += credit;
+    totalCredit += credit;
+  }
+  bracket.rounds.forEach(function(rnd){ rnd.matches.forEach(apply); });
+  apply(bracket.gf1);
+  apply(bracket.gf2);
+  var fundTotal = SEEDED.length * OPTION_ENTRY_FEE;
+  var remainingFund = Math.max(0, fundTotal - totalCredit);
+  return {perPlayer:perPlayer, totalCredit:totalCredit, fundTotal:fundTotal, remainingFund:remainingFund};
+}
+
+function normalizeStateObj(parsed){
+  return {
+    results: (parsed && parsed.results) || {},
+    funding: (parsed && typeof parsed.funding === "number" && parsed.funding >= 0) ? parsed.funding : 10000,
+    schedule: (parsed && parsed.schedule) || {}
+  };
+}
+
+var state = normalizeStateObj(null);
+
+/* ---------------- Firebase: auth + realtime shared state ---------------- */
+
+var auth = null, db = null, tourneyDoc = null;
+
+function syncAuthUI(){
+  var statusEl = document.getElementById("authStatus");
+  var loginBtn = document.getElementById("loginBtn");
+  var logoutBtn = document.getElementById("logoutBtn");
+  if(currentUser){
+    statusEl.textContent = (currentUser.email || currentUser.displayName || "로그인됨") +
+      (canEdit() ? " · ✏️ 편집 가능" : " · 보기 전용");
+    loginBtn.style.display = "none";
+    logoutBtn.style.display = "";
+  } else {
+    statusEl.textContent = "보기 전용";
+    loginBtn.style.display = "";
+    logoutBtn.style.display = "none";
+  }
+}
+
+function initFirebase(){
+  if(!window.FIREBASE_CONFIG){
+    document.getElementById("authStatus").textContent = "동기화 비활성 (설정 없음)";
+    render();
+    return;
+  }
+  firebase.initializeApp(window.FIREBASE_CONFIG);
+  auth = firebase.auth();
+  db = firebase.firestore();
+  tourneyDoc = db.collection("billiard-tourney-2026").doc("state");
+
+  auth.onAuthStateChanged(function(u){
+    currentUser = u;
+    syncAuthUI();
+    render();
+  });
+
+  tourneyDoc.onSnapshot(function(snap){
+    state = normalizeStateObj(snap.exists ? snap.data() : null);
+    render();
+  }, function(err){
+    console.warn("tourney snapshot error", err);
+  });
+
+  document.getElementById("loginBtn").addEventListener("click", function(){
+    var provider = new firebase.auth.GoogleAuthProvider();
+    auth.signInWithPopup(provider).catch(function(e){ alert("로그인 실패: " + e.message); });
+  });
+  document.getElementById("logoutBtn").addEventListener("click", function(){
+    auth.signOut();
+  });
+}
+
+// The single write path: every score confirm, schedule pick, funding change
+// or reset goes through here. It re-renders immediately from the locally
+// mutated `state` (optimistic), then pushes that same object to Firestore.
+// Every other open tab/phone is subscribed via onSnapshot, so they pick up
+// the change within moments, live -- no publish/pin/reload dance needed.
+// Firestore's own security rules are the real gate on who can write; this
+// canEdit() check is just so a non-editor's UI never offers the controls
+// (and never fires a write that the rules would reject anyway).
+function commitState(){
+  render();
+  if(!canEdit() || !tourneyDoc) return;
+  tourneyDoc.set(state).catch(function(e){
+    console.warn("save failed", e);
+    alert("저장 실패: " + e.message);
+  });
+}
+
+function seedPlayers(list){
+  var arr = list.slice().sort(function(a,b){
+    if(b.games !== a.games) return b.games - a.games;
+    if(b.w !== a.w) return b.w - a.w;
+    return b.avg - a.avg;
+  });
+  return arr.map(function(p, i){
+    var seed = i+1;
+    return Object.assign({}, p, {seed:seed, ball:BALLS[(seed-1) % BALLS.length]});
+  });
+}
+
+var SEEDED = seedPlayers(PLAYERS);
+var BY_SEED = {};
+SEEDED.forEach(function(p){ BY_SEED[p.seed] = p; });
+
+function fmtWon(n){ return n.toLocaleString("ko-KR"); }
+
+function seedAsc(a,b){ return a.seed - b.seed; }
+function pointDesc(a,b){ return b.point !== a.point ? b.point - a.point : a.seed - b.seed; }
+
+// Korean billiards handicap rule: each player races to their OWN target
+// score (p.point). Whoever's entered score reaches their own target first
+// is the winner -- a raw score comparison is meaningless since the two
+// targets differ (e.g. 24 vs a 25-target is a loss, 22 vs a 22-target is a win).
+function makeMatch(id, p1, p2, results, kind){
+  var r = results[id];
+  var hasScores = !!(r && r.s1 != null && r.s2 != null);
+  var reached1 = hasScores && r.s1 >= p1.point;
+  var reached2 = hasScores && r.s2 >= p2.point;
+  var confirmed = hasScores && (reached1 !== reached2);
+  var winner = null, loser = null;
+  if(confirmed){
+    winner = reached1 ? p1 : p2;
+    loser  = reached1 ? p2 : p1;
+  }
+  return {
+    id:id, bye:false, kind: kind || "normal", p1:p1, p2:p2,
+    score1: r ? r.s1 : null, score2: r ? r.s2 : null,
+    winner:winner, loser:loser, confirmed:confirmed
+  };
+}
+
+// Round 1 (WB only) pairs strictly by seed: 1st-2nd, 3rd-4th, ... (the
+// 조편성 rule). Every later round instead pairs by handicap point value
+// (higher point together first), which keeps matches close in skill.
+//
+// When a later round's pool is odd, one player sits out the main pairing
+// (A) to "wait" -- normally the best remaining seed, but for the round fed
+// directly by the open match, `forcedWaiting` overrides that (see the
+// "아슬아슬하게 결정된 경기" rule in computeBracket). Their phase-A LOSERS
+// don't drop out immediately -- they get a 패자부활전 revival match (R)
+// against each other, and whoever wins THAT then has to beat the waiting
+// player in a challenge match (X). A, R and X are all shown together under
+// this round. The phase-A WINNERS play each other for the other spot too
+// (U), but since that match only depends on A (not on R/X), it's shown one
+// round later, as its own standalone round -- the round after it then
+// pairs U's winner against X's winner for the real next stage.
+function generateRound(prefix, roundNum, poolAsc, results, forcedWaiting){
+  var pool = poolAsc.slice();
+  var isSeedingRound = (prefix === "WB" && roundNum === 1);
+  var matches = [];
+
+  if(pool.length % 2 === 0){
+    var ordered = isSeedingRound ? pool.slice() : pool.slice().sort(pointDesc);
+    var pairs = [];
+    for(var i=0;i<ordered.length;i+=2){ pairs.push([ordered[i], ordered[i+1]]); }
+    matches = pairs.map(function(pair, i){
+      return makeMatch(prefix+"-"+roundNum+"-"+(i+1), pair[0], pair[1], results);
+    });
+    var complete = matches.every(function(m){ return m.confirmed; });
+    return {
+      matches: matches, complete: complete,
+      winners: complete ? matches.map(function(m){ return m.winner; }) : null,
+      losers: complete ? matches.map(function(m){ return m.loser; }) : null,
+      extraRound: null
+    };
+  }
+
+  // odd pool
+  var waiting = forcedWaiting || pool.slice().sort(seedAsc)[0];
+  var rest = pool.filter(function(p){ return p !== waiting; }).sort(pointDesc);
+  var aPairs = [];
+  for(var j=0;j<rest.length;j+=2){ aPairs.push([rest[j], rest[j+1]]); }
+  var aMatches = aPairs.map(function(pair, i){
+    return makeMatch(prefix+"-"+roundNum+"-A"+(i+1), pair[0], pair[1], results, "normal");
+  });
+  matches = matches.concat(aMatches);
+
+  var aComplete = aMatches.every(function(m){ return m.confirmed; });
+  if(!aComplete){
+    matches.push({id: prefix+"-"+roundNum+"-WAIT", waiting:true, p1:waiting});
+    return {matches:matches, complete:false, winners:null, losers:null, extraRound:null};
+  }
+
+  var W = aMatches.map(function(m){ return m.winner; });
+  var L = aMatches.map(function(m){ return m.loser; });
+  var extraMatches = [];
+
+  var upperRep, uMatch = null;
+  if(W.length === 1){
+    upperRep = W[0];
+  } else {
+    uMatch = makeMatch(prefix+"-"+roundNum+"-U", W[0], W[1], results, "upper");
+    extraMatches.push(uMatch);
+    upperRep = uMatch.confirmed ? uMatch.winner : null;
+  }
+
+  var lowerCandidate, rMatch = null;
+  if(L.length === 1){
+    lowerCandidate = L[0];
+  } else {
+    rMatch = makeMatch(prefix+"-"+roundNum+"-R", L[0], L[1], results, "revival");
+    matches.push(rMatch);
+    lowerCandidate = rMatch.confirmed ? rMatch.winner : null;
+  }
+
+  var xMatch = null, lowerRep = null;
+  if(lowerCandidate){
+    xMatch = makeMatch(prefix+"-"+roundNum+"-X", waiting, lowerCandidate, results, "challenge");
+    extraMatches.push(xMatch);
+    lowerRep = xMatch.confirmed ? xMatch.winner : null;
+  } else {
+    extraMatches.push({id: prefix+"-"+roundNum+"-WAIT2", waiting:true, p1:waiting});
+  }
+
+  var oddComplete = !!upperRep && !!lowerRep;
+  var oddLosers = null;
+  if(oddComplete){
+    oddLosers = [];
+    if(uMatch) oddLosers.push(uMatch.loser);
+    if(rMatch) oddLosers.push(rMatch.loser);
+    oddLosers.push(xMatch.loser);
+  }
+  return {
+    matches: matches, complete: oddComplete,
+    winners: oddComplete ? [upperRep, lowerRep] : null,
+    losers: oddLosers,
+    extraRound: {matches: extraMatches}
+  };
+}
+
+// Which open-match pair gets to skip 1차전 and go straight to 2차전: the
+// closest-fought match of the open round (아슬아슬하게 결정된 경기), not
+// just whoever holds the best seed. "Closest" = 1) the loser's own score
+// landed nearest their personal target, 2) tie -> the loser with the lower
+// target point, 3) tie -> the winner with the higher target point.
+function findClosestMatch(matches){
+  var best = null;
+  matches.forEach(function(m){
+    var loserScore = (m.winner === m.p1) ? m.score2 : m.score1;
+    var diff = m.loser.point - loserScore;
+    if(!best ||
+       diff < best.diff ||
+       (diff === best.diff && m.loser.point < best.match.loser.point) ||
+       (diff === best.diff && m.loser.point === best.match.loser.point && m.winner.point > best.match.winner.point) ||
+       (diff === best.diff && m.loser.point === best.match.loser.point && m.winner.point === best.match.winner.point && m.winner.seed < best.match.winner.seed)
+    ){
+      best = {match:m, diff:diff};
+    }
+  });
+  return best ? best.match : null;
+}
+
+// Round 1 is the only point of contact between the two brackets: its
+// winners become 승자조 (WB), its losers become 패자조 (LB). From then on
+// each side runs its OWN independent reduction down to a single champion --
+// losing a later WB match never sends you to LB, and vice versa. The two
+// sides only meet again in the grand final.
+function computeBracket(results){
+  var rounds = [];
+
+  var seedPool = SEEDED.slice().sort(seedAsc);
+  var round1 = generateRound("WB", 1, seedPool, results);
+  rounds.push({type:"WB", num:1, matches:round1.matches});
+
+  var openWaiting = null;
+  if(round1.complete){
+    var openMatches = round1.matches.filter(function(m){ return !m.bye && !m.waiting; });
+    var closest = findClosestMatch(openMatches);
+    if(closest) openWaiting = {wb: closest.winner, lb: closest.loser};
+  }
+
+  var wbChampion = null, lbChampion = null, wbRunnerUp = null;
+
+  if(round1.complete){
+    // ---- 승자조: round1 winners reduce independently to a champion ----
+    var wbPool = round1.winners.slice();
+    var wbRoundNum = 1;
+    while(wbPool.length > 1){
+      wbRoundNum++;
+      wbPool.sort(seedAsc);
+      var wasWbFinal = (wbPool.length === 2);
+      var rg = generateRound("WB", wbRoundNum, wbPool, results, wbRoundNum === 2 ? (openWaiting && openWaiting.wb) : null);
+      rounds.push({type:"WB", num:wbRoundNum, matches:rg.matches});
+      if(rg.extraRound){
+        wbRoundNum++;
+        rounds.push({type:"WB", num:wbRoundNum, matches:rg.extraRound.matches});
+      }
+      if(!rg.complete) break;
+      if(wasWbFinal) wbRunnerUp = rg.losers[0];
+      wbPool = rg.winners;
+    }
+    if(wbPool.length === 1) wbChampion = wbPool[0];
+
+    // ---- 패자조: round1 losers reduce independently to a champion ----
+    var lbPool = round1.losers.slice();
+    var lbRoundNum = 0;
+    while(lbPool.length > 1){
+      lbRoundNum++;
+      lbPool.sort(seedAsc);
+      var rg2 = generateRound("LB", lbRoundNum, lbPool, results, lbRoundNum === 1 ? (openWaiting && openWaiting.lb) : null);
+      rounds.push({type:"LB", num:lbRoundNum, matches:rg2.matches});
+      if(rg2.extraRound){
+        lbRoundNum++;
+        rounds.push({type:"LB", num:lbRoundNum, matches:rg2.extraRound.matches});
+      }
+      if(!rg2.complete) break;
+      lbPool = rg2.winners;
+    }
+    if(lbPool.length === 1) lbChampion = lbPool[0];
+  }
+
+  // ---- Grand final ----
+  var gf1 = null, gf2 = null, champion = null, runnerUp = null, needsReset = false, complete = false;
+  if(wbChampion && lbChampion){
+    gf1 = makeMatch("GF-1", wbChampion, lbChampion, results, "grandfinal");
+    var gf1confirmed = gf1.confirmed;
+    if(gf1confirmed){
+      if(gf1.winner === wbChampion){
+        champion = wbChampion; runnerUp = lbChampion; complete = true;
+      } else {
+        needsReset = true;
+        gf2 = makeMatch("GF-2", wbChampion, lbChampion, results, "grandfinal");
+        var gf2confirmed = gf2.confirmed;
+        if(gf2confirmed){
+          champion = gf2.winner; runnerUp = gf2.loser; complete = true;
+        }
+      }
+    }
+  }
+
+  // ---- pot & live records ----
+  var allReal = [];
+  rounds.forEach(function(rnd){
+    rnd.matches.forEach(function(m){ if(!m.bye && m.confirmed) allReal.push(m); });
+  });
+  if(gf1 && gf1.confirmed) allReal.push(gf1);
+  if(gf2 && gf2.confirmed) allReal.push(gf2);
+
+  var potMatches = allReal.length;
+  var liveRecord = {};
+  SEEDED.forEach(function(p){ liveRecord[p.seed] = {w:0, l:0}; });
+  allReal.forEach(function(m){
+    liveRecord[m.winner.seed].w++;
+    liveRecord[m.loser.seed].l++;
+  });
+
+  return {
+    rounds:rounds, wbChampion:wbChampion, lbChampion:lbChampion, wbRunnerUp:wbRunnerUp,
+    gf1:gf1, gf2:gf2, needsReset:needsReset, champion:champion, runnerUp:runnerUp,
+    complete:complete, potMatches:potMatches, liveRecord:liveRecord
+  };
+}
+
+/* ---------------- rendering ---------------- */
+
+function ballHtml(p, size){
+  size = size || 30;
+  return '<span class="ball" style="width:'+size+'px;height:'+size+'px;background:'+p.ball.bg+';color:'+p.ball.fg+';font-size:'+(size*0.42)+'px;">'+p.seed+'</span>';
+}
+
+function renderHeroBalls(){
+  var el = document.getElementById("heroBalls");
+  el.innerHTML = SEEDED.map(function(p){
+    return '<span class="mini-ball" style="background:'+p.ball.bg+';color:'+p.ball.fg+';" title="'+p.seed+'. '+p.name+'">'+p.seed+'</span>';
+  }).join("");
+}
+
+function renderSeedTable(bracket){
+  var liveRecord = bracket.liveRecord;
+  var info = computeCreditInfo(bracket);
+  var body = document.getElementById("seedBody");
+  var head = document.getElementById("fundingColHead");
+  if(head) head.textContent = info ? "Credit" : "펀딩";
+  body.innerHTML = SEEDED.map(function(p){
+    var lr = (liveRecord && liveRecord[p.seed]) || {w:0, l:0};
+    var lrHtml = (lr.w === 0 && lr.l === 0)
+      ? '<span class="mono" style="color:var(--ink-soft);">-</span>'
+      : '<span class="mono"><span class="record-w">'+lr.w+'승</span> <span class="record-l">'+lr.l+'패</span></span>';
+    var owed, sub;
+    if(info){
+      owed = info.perPlayer[p.seed];
+      sub = displayMode === "flat"
+        ? fmtWon(FLAT_CREDIT_RATE)+'원 × '+lr.w+'승'
+        : lr.w+'승 · 점수차 합산';
+    } else {
+      owed = lr.w * state.funding;
+      sub = fmtWon(state.funding)+'원 × '+lr.w+'승';
+    }
+    var fundingHtml = owed > 0
+      ? '<span class="mono">'+fmtWon(owed)+'원</span><div class="funding-sub">'+sub+'</div>'
+      : '<span class="mono" style="color:var(--ink-soft);">-</span>';
+    return '<tr>'+
+      '<td class="num">'+p.seed+'</td>'+
+      '<td><div class="name-cell">'+ballHtml(p,30)+'<span>'+p.name+'</span></div></td>'+
+      '<td class="num">'+fundingHtml+'</td>'+
+      '<td>'+lrHtml+'</td>'+
+      '<td class="num mono">'+p.point+'</td>'+
+      '<td class="num mono">'+p.avg.toFixed(3)+'</td>'+
+      '<td class="mono"><span class="record-w">'+p.w+'승</span> <span class="record-l">'+p.l+'패</span></td>'+
+      '<td class="num mono">'+p.games+'</td>'+
+      '</tr>';
+  }).join("");
+}
+
+// `editable` already folds in canEdit() (see matchCardHtml/gfMatchHtml), so
+// a read-only viewer never sees a live <input> here -- only the fixed
+// confirmed score, or a blank placeholder while the match is still open.
+function playerRowHtml(p, matchId, side, match, editable){
+  if(!p) return "";
+  var isWinner = match.confirmed && match.winner === p;
+  var isLoser = match.confirmed && match.loser === p;
+  var cls = "player-row" + (isWinner ? " winner" : "") + (isLoser ? " loser" : "");
+  var scoreHtml;
+  if(editable){
+    var val = side === 1 ? (match.score1 != null ? match.score1 : "") : (match.score2 != null ? match.score2 : "");
+    scoreHtml = '<input class="score-input" type="number" min="0" inputmode="numeric" '+
+      'data-match="'+matchId+'" data-side="'+side+'" value="'+val+'">';
+  } else if(match.confirmed){
+    var sc = side === 1 ? match.score1 : match.score2;
+    scoreHtml = '<span class="score-fixed mono">'+sc+'</span>';
+  } else {
+    scoreHtml = '<span class="score-fixed mono" style="opacity:.35;">-</span>';
+  }
+  return '<div class="'+cls+'">'+ballHtml(p,18)+'<span class="pname">'+p.name+' <span class="ppoint mono">'+p.point+'</span></span>'+scoreHtml+'</div>';
+}
+
+function formatSchedule(sched){
+  var d = new Date(sched.date+"T00:00:00");
+  if(isNaN(d.getTime())) return "";
+  var mm = String(d.getMonth()+1).padStart(2,"0");
+  var dd = String(d.getDate()).padStart(2,"0");
+  return mm+"월"+dd+"일 "+(sched.session === "dinner" ? "저녁" : "점심");
+}
+
+function scheduleControlHtml(matchId){
+  var sched = state.schedule[matchId];
+  if(!canEdit()){
+    if(!sched || !sched.date) return "";
+    return '<span class="sched-chip" style="cursor:default;">📅 '+formatSchedule(sched)+'</span>';
+  }
+  var isEditing = !sched || !sched.date || window.__schedEditing[matchId];
+  if(!isEditing){
+    return '<span class="sched-chip" data-action="sched-edit" data-match="'+matchId+'" role="button" tabindex="0">📅 '+formatSchedule(sched)+'</span>';
+  }
+  var dateVal = sched ? sched.date : "";
+  var session = (sched && sched.session) || "lunch";
+  return '<span class="sched-inline">'+
+    '<input type="date" class="sched-date" data-action-input="sched-date" data-match="'+matchId+'" value="'+dateVal+'">'+
+    '<button type="button" class="sched-session" data-action="sched-toggle" data-match="'+matchId+'" data-session="'+session+'">'+(session === "dinner" ? "저녁" : "점심")+'</button>'+
+    '</span>';
+}
+
+var KIND_LABEL = {
+  revival: "패자부활전"
+};
+
+function matchCardHtml(m){
+  if(m.bye){
+    return '<div class="match-card bye"><div class="bye-text">'+ballHtml(m.p1,18)+'<b>'+m.p1.name+'</b>&nbsp;부전승</div></div>';
+  }
+  if(m.waiting){
+    return '<div class="match-card bye"><div class="bye-text">'+ballHtml(m.p1,18)+'<b>'+m.p1.name+'</b>&nbsp;대기 중 · 도전전 결과를 기다립니다</div></div>';
+  }
+  var editingSet = window.__editing || {};
+  var editable = canEdit() && (!m.confirmed || editingSet[m.id]);
+  var kindText = KIND_LABEL[m.kind] || "";
+  var players = playerRowHtml(m.p1, m.id, 1, m, editable) + playerRowHtml(m.p2, m.id, 2, m, editable);
+  var body, actions;
+  if(editable){
+    body = (kindText ? '<div class="kind-label">'+kindText+'</div>' : "") + players;
+    actions = '<div class="match-actions">'+
+      '<button class="btn btn-confirm" data-action="confirm" data-match="'+m.id+'" '+(canConfirm(m) ? "" : "disabled")+'>확정</button>'+
+      (m.confirmed ? '<button class="btn btn-edit" data-action="cancel-edit" data-match="'+m.id+'">취소</button>' : '')+
+      scheduleControlHtml(m.id)+
+      '</div>'+
+      '<div class="validation" id="val-'+m.id+'"></div>';
+  } else {
+    body = players;
+    var editIconHtml = canEdit() ? '<button class="btn btn-icon" data-action="edit" data-match="'+m.id+'" title="결과 수정" aria-label="결과 수정">✏️</button>' : '';
+    actions = '<div class="match-actions match-actions-done">'+
+      editIconHtml+
+      (kindText ? '<span class="kind-label-inline">'+kindText+'</span>' : '')+
+      scheduleControlHtml(m.id)+
+      '</div>';
+  }
+  return '<div class="match-card">'+body+actions+'</div>';
+}
+
+function canConfirm(m){
+  var s1 = m.score1, s2 = m.score2;
+  if(s1 == null || s2 == null || s1 === "" || s2 === "" || Number(s1) < 0 || Number(s2) < 0) return false;
+  var reached1 = Number(s1) >= m.p1.point;
+  var reached2 = Number(s2) >= m.p2.point;
+  return reached1 !== reached2;
+}
+
+var WB_ROUND_LABEL = {2:"승자 1차전", 3:"승자 2차전", 4:"승자 최종전"};
+var LB_ROUND_LABEL = {1:"패자 1차전", 2:"패자 2차전", 3:"패자 최종전"};
+
+function bandHtml(cls, dotCls, label, matches){
+  return '<div class="band '+cls+'">'+
+    '<div class="band-head"><span class="band-dot '+dotCls+'"></span><h3>'+label+'</h3></div>'+
+    '<div class="band-matches">'+matches.map(function(m){ return matchCardHtml(m); }).join("")+'</div>'+
+    '</div>';
+}
+
+function renderBracketTree(bracket){
+  var el = document.getElementById("bracketTree");
+  var openRound = bracket.rounds.find(function(r){ return r.type === "WB" && r.num === 1; });
+  var wbRounds = bracket.rounds.filter(function(r){ return r.type === "WB" && r.num > 1; })
+    .sort(function(a,b){ return b.num - a.num; });
+  var lbRounds = bracket.rounds.filter(function(r){ return r.type === "LB"; })
+    .sort(function(a,b){ return a.num - b.num; });
+
+  if(!openRound){
+    el.innerHTML = '<div class="empty-track">아직 진행할 경기가 없습니다.</div>';
+    return;
+  }
+
+  var html = "";
+  wbRounds.forEach(function(rnd){
+    html += bandHtml("wb", "wb", WB_ROUND_LABEL[rnd.num] || ("승자 "+rnd.num+"라운드"), rnd.matches);
+  });
+  if(wbRounds.length) html += '<div class="spine"></div>';
+  html += bandHtml("open", "open", "오픈대전", openRound.matches);
+  if(lbRounds.length) html += '<div class="spine"></div>';
+  lbRounds.forEach(function(rnd){
+    html += bandHtml("lb", "lb", LB_ROUND_LABEL[rnd.num] || ("패자 "+rnd.num+"라운드"), rnd.matches);
+  });
+
+  el.innerHTML = html;
+}
+
+function renderGF(bracket){
+  var section = document.getElementById("gfSection");
+  if(!bracket.wbChampion || !bracket.lbChampion){
+    section.style.display = "none";
+    return;
+  }
+  section.style.display = "";
+  var html = "";
+  html += gfMatchHtml(bracket.gf1, "결승 1차전", "wbChampion");
+  if(bracket.needsReset){
+    html += gfMatchHtml(bracket.gf2, "결승 2차전 · 리셋매치", "reset");
+  }
+  document.getElementById("gfMatches").innerHTML = html;
+}
+
+function gfMatchHtml(m, label, tag){
+  if(!m) return "";
+  var editingSet = window.__editing || {};
+  var editable = canEdit() && (!m.confirmed || editingSet[m.id]);
+  var body = playerRowHtml(m.p1, m.id, 1, m, editable) + playerRowHtml(m.p2, m.id, 2, m, editable);
+  var actions;
+  if(editable){
+    actions = '<div class="match-actions">'+
+      '<button class="btn btn-confirm" data-action="confirm" data-match="'+m.id+'" '+(canConfirm(m) ? "" : "disabled")+'>확정</button>'+
+      (m.confirmed ? '<button class="btn btn-edit" data-action="cancel-edit" data-match="'+m.id+'">취소</button>' : '')+
+      scheduleControlHtml(m.id)+
+      '</div><div class="validation" id="val-'+m.id+'"></div>';
+  } else {
+    var editIconHtml = canEdit() ? '<button class="btn btn-icon" data-action="edit" data-match="'+m.id+'" title="결과 수정" aria-label="결과 수정">✏️</button>' : '';
+    actions = '<div class="match-actions match-actions-done">'+editIconHtml+
+      scheduleControlHtml(m.id)+
+      '</div>';
+  }
+  return '<div class="gf-match"><div class="gf-label">'+label+'</div>'+body+actions+'</div>';
+}
+
+var OPTION_NOTE_TEXT = {
+  flat: '참가비 30,000원 × 10명 · 승리당 10,000원 Credit',
+  margin: '참가비 30,000원 × 10명 · 남은 점수 1~2점=점당2,000원 · 3~4점=점당3,000원 · 5점+=점당4,000원 Credit'
+};
+
+function renderPot(bracket){
+  var label = document.getElementById("potLabel");
+  var fundingControl = document.getElementById("fundingControl");
+  var optionNote = document.getElementById("optionNote");
+  var resetBtn = document.getElementById("resetBtn");
+  if(resetBtn) resetBtn.style.display = canEdit() ? "" : "none";
+  var info = computeCreditInfo(bracket);
+  if(info){
+    if(label) label.textContent = "옵션 기금 잔액";
+    if(fundingControl) fundingControl.style.display = "none";
+    if(optionNote){
+      optionNote.style.display = "";
+      optionNote.textContent = OPTION_NOTE_TEXT[displayMode] || "";
+    }
+    document.getElementById("potAmount").innerHTML = fmtWon(info.remainingFund) + '<span class="won">원</span>';
+    var meta2 = '기금 ' + fmtWon(info.fundTotal) + '원 · Credit 지급 ' + fmtWon(info.totalCredit) + '원';
+    if(bracket.complete) meta2 += ' · 토너먼트 종료';
+    document.getElementById("potMeta").textContent = meta2;
+    return;
+  }
+  if(label) label.textContent = "누적 상금 (POT)";
+  if(fundingControl) fundingControl.style.display = "";
+  if(optionNote) optionNote.style.display = "none";
+  var pot = bracket.potMatches * state.funding;
+  document.getElementById("potAmount").innerHTML = fmtWon(pot) + '<span class="won">원</span>';
+  var meta = bracket.potMatches + '경기 확정 · 게임당 ' + fmtWon(state.funding) + '원';
+  if(bracket.complete) meta += ' · 토너먼트 종료';
+  document.getElementById("potMeta").textContent = meta;
+}
+
+function renderFixtures(bracket){
+  var el = document.getElementById("fixturesList");
+  var pending = [];
+  bracket.rounds.forEach(function(rnd){
+    rnd.matches.forEach(function(m){
+      if(!m.bye && !m.waiting && m.p2 && !m.confirmed) pending.push(m);
+    });
+  });
+  if(bracket.gf1 && !bracket.gf1.confirmed) pending.push(bracket.gf1);
+  if(bracket.gf2 && !bracket.gf2.confirmed) pending.push(bracket.gf2);
+
+  var withDate = [], withoutDate = [];
+  pending.forEach(function(m){
+    var sched = state.schedule[m.id];
+    if(sched && sched.date) withDate.push({match:m, sched:sched});
+    else withoutDate.push({match:m, sched:null});
+  });
+  withDate.sort(function(a,b){
+    if(a.sched.date !== b.sched.date) return a.sched.date < b.sched.date ? -1 : 1;
+    var order = {lunch:0, dinner:1};
+    return (order[a.sched.session]||0) - (order[b.sched.session]||0);
+  });
+
+  var ordered = withDate.concat(withoutDate);
+  if(ordered.length === 0){
+    el.innerHTML = '<div class="fixtures-empty">남은 경기가 없습니다.</div>';
+    return;
+  }
+  el.innerHTML = ordered.map(function(item, i){
+    var dateHtml = item.sched
+      ? '<span class="fixture-date">'+formatSchedule(item.sched)+'</span>'
+      : '<span class="fixture-date unset">일자 미정</span>';
+    return '<span class="fixture-ball">'+(i+1)+'</span>'+
+      dateHtml+
+      '<span class="fixture-vs">'+item.match.p1.name+'-'+item.match.p2.name+'</span>';
+  }).join("");
+}
+
+function renderResult(bracket){
+  var section = document.getElementById("resultSection");
+  if(!bracket.complete){
+    section.style.display = "none";
+    section.innerHTML = "";
+    return;
+  }
+  section.style.display = "";
+  var info = computeCreditInfo(bracket);
+  var pot = info ? info.remainingFund : bracket.potMatches * state.funding;
+  var pA = Math.round(pot * 0.6);
+  var pB = Math.round(pot * 0.3);
+  var pC = Math.round(pot * 0.1);
+
+  var confettiHtml = "";
+  var colors = [BALLS[1].bg, BALLS[8].bg, BALLS[4].bg, BALLS[5].bg, BALLS[2].bg];
+  for(var i=0;i<24;i++){
+    var left = Math.round(Math.random()*100);
+    var dur = (2 + Math.random()*2).toFixed(2);
+    var delay = (Math.random()*1.5).toFixed(2);
+    confettiHtml += '<span class="confetti-dot" style="left:'+left+'%;background:'+colors[i%colors.length]+';animation-duration:'+dur+'s;animation-delay:'+delay+'s;"></span>';
+  }
+
+  // Credit modes: each recipient's own accumulated win Credit plus their
+  // prize share, shown as "최종금액(+N승)" alongside a right-aligned
+  // "+상금 P%" breakdown of just the prize portion.
+  function pfRow(wins, personalCredit, prizeAmount, pctLabel){
+    var total = personalCredit + prizeAmount;
+    return '<div class="prize-final">'+
+      '<div class="pf-block"><div class="pf-label">최종금액(+'+wins+'승)</div><div class="pf-amt mono">'+fmtWon(total)+'원</div></div>'+
+      '<div class="pf-block pf-right"><div class="pf-label">+상금 '+pctLabel+'</div><div class="pf-amt mono">'+fmtWon(prizeAmount)+'원</div></div>'+
+      '</div>';
+  }
+  function singleCard(person, prizeAmount, pctLabel, whyText){
+    var winCount = bracket.liveRecord[person.seed].w;
+    return '<div class="prize-card">'+
+      (info ? '' : '<div class="pct">'+pctLabel+'</div><div class="amt mono">'+fmtWon(prizeAmount)+'원</div>')+
+      '<div class="who">'+ballHtml(person,20)+' '+person.name+'</div>'+
+      '<div class="why">'+whyText+'</div>'+
+      (info ? pfRow(winCount, info.perPlayer[person.seed], prizeAmount, pctLabel) : '')+
+      '</div>';
+  }
+  var modeLabel = displayMode === "flat" ? "옵션 게임 시뮬레이션 · 정액 Credit"
+    : displayMode === "margin" ? "옵션 게임 시뮬레이션 · 점수차 Credit" : "";
+  var explainText = displayMode === "flat"
+    ? '참가비 30,000원 × 10명 = '+fmtWon(SEEDED.length*OPTION_ENTRY_FEE)+'원 기금에서, 승리당 지급된 Credit '+fmtWon(info ? info.totalCredit : 0)+'원을 뺀 나머지 '+fmtWon(pot)+'원을 위 상금으로 나눕니다. "최종금액"은 그 상금에 본인이 게임 중 받은 Credit을 더한 값입니다.'
+    : displayMode === "margin"
+    ? '참가비 30,000원 × 10명 = '+fmtWon(SEEDED.length*OPTION_ENTRY_FEE)+'원 기금에서, 이긴 사람이 상대가 자기 목표 점수에 못 미친 점수만큼(1~2점=점당2,000원, 3~4점=점당3,000원, 5점 이상=점당4,000원) Credit으로 가져간 총 '+fmtWon(info ? info.totalCredit : 0)+'원을 뺀 나머지 '+fmtWon(pot)+'원을 위 상금으로 나눕니다. "최종금액"은 그 상금에 본인이 게임 중 받은 Credit을 더한 값입니다.'
+    : "";
+
+  section.innerHTML =
+    '<div class="result-panel">'+
+      confettiHtml+
+      (info ? '<div class="mode-badge">'+modeLabel+'</div>' : '')+
+      '<span class="crown">🏆</span>'+
+      '<div class="champ-tag">2026 결산 토너먼트 챔피언</div>'+
+      '<h2 class="champ-name">'+bracket.champion.name+'</h2>'+
+      '<div class="champ-tag">준우승 '+bracket.runnerUp.name+'</div>'+
+      '<div class="prize-grid">'+
+        singleCard(bracket.champion, pA, "60%", "결선 토너먼트 최종 우승")+
+        singleCard(bracket.runnerUp, pB, "30%", "결선 토너먼트 준우승")+
+        singleCard(bracket.wbRunnerUp, pC, "10%", "승자조 최종전에서 아깝게 패한 몫")+
+      '</div>'+
+      (info ? '<div class="mode-explain">'+explainText+'</div>' : '')+
+    '</div>';
+}
+
+var MATCH_INDEX = {};
+function indexMatches(bracket){
+  MATCH_INDEX = {};
+  bracket.rounds.forEach(function(rnd){
+    rnd.matches.forEach(function(m){ if(m.p2) MATCH_INDEX[m.id] = {p1:m.p1, p2:m.p2}; });
+  });
+  if(bracket.gf1) MATCH_INDEX[bracket.gf1.id] = {p1:bracket.gf1.p1, p2:bracket.gf1.p2};
+  if(bracket.gf2) MATCH_INDEX[bracket.gf2.id] = {p1:bracket.gf2.p1, p2:bracket.gf2.p2};
+}
+
+function render(){
+  document.getElementById("readOnlyBanner").style.display = canEdit() ? "none" : "";
+  var bracket = computeBracket(state.results);
+  indexMatches(bracket);
+  var fundingInput = document.getElementById("fundingInput");
+  fundingInput.value = state.funding;
+  fundingInput.disabled = !canEdit();
+  renderSeedTable(bracket);
+  renderPot(bracket);
+  renderFixtures(bracket);
+  renderBracketTree(bracket);
+  renderGF(bracket);
+  renderResult(bracket);
+}
+
+/* ---------------- events ---------------- */
+
+window.__editing = {};
+window.__schedEditing = {};
+
+document.addEventListener("input", function(e){
+  var t = e.target;
+  if(t.matches(".score-input")){
+    if(!canEdit()) return;
+    var id = t.dataset.match, side = t.dataset.side;
+    var r = state.results[id] || {s1:null, s2:null};
+    var val = t.value === "" ? null : Number(t.value);
+    if(side === "1") r.s1 = val; else r.s2 = val;
+    state.results[id] = r;
+    var idx = MATCH_INDEX[id];
+    var btn = document.querySelector('.btn-confirm[data-match="'+id+'"]');
+    var okObj = {score1:r.s1, score2:r.s2, p1: idx ? idx.p1 : null, p2: idx ? idx.p2 : null};
+    var ok = idx && canConfirm(okObj);
+    if(btn) btn.disabled = !ok;
+    var valEl = document.getElementById("val-"+id);
+    if(valEl){
+      var msg = "";
+      if(idx && r.s1 != null && r.s2 != null && r.s1 !== "" && r.s2 !== ""){
+        var reached1 = Number(r.s1) >= idx.p1.point, reached2 = Number(r.s2) >= idx.p2.point;
+        if(reached1 && reached2) msg = "두 선수 모두 목표 점수에 도달했습니다. 먼저 끝낸 쪽만 도달 점수로 입력하세요.";
+        else if(!reached1 && !reached2) msg = "둘 중 한 명은 자기 목표 점수(" + idx.p1.point + " / " + idx.p2.point + ")에 도달해야 승자가 결정됩니다.";
+      }
+      valEl.textContent = msg;
+    }
+  }
+});
+
+document.addEventListener("click", function(e){
+  var btn = e.target.closest("[data-action]");
+  if(btn){
+    if(!canEdit()) return;
+    var action = btn.dataset.action;
+    var id = btn.dataset.match;
+    if(action === "confirm"){
+      var r = state.results[id];
+      var idx = MATCH_INDEX[id];
+      if(r && idx && canConfirm({score1:r.s1, score2:r.s2, p1:idx.p1, p2:idx.p2})){
+        r.s1 = Number(r.s1); r.s2 = Number(r.s2);
+        delete window.__editing[id];
+        commitState();
+      }
+      return;
+    }
+    if(action === "edit"){
+      window.__editing[id] = true;
+      render();
+      return;
+    }
+    if(action === "cancel-edit"){
+      delete window.__editing[id];
+      render();
+      return;
+    }
+    if(action === "sched-edit"){
+      window.__schedEditing[id] = true;
+      render();
+      return;
+    }
+    if(action === "sched-toggle"){
+      var sc = state.schedule[id] || {date:"", session:"lunch"};
+      sc.session = sc.session === "dinner" ? "lunch" : "dinner";
+      state.schedule[id] = sc;
+      window.__schedEditing[id] = true;
+      commitState();
+      return;
+    }
+  }
+  if(e.target.id === "resetBtn"){
+    if(!canEdit()) return;
+    if(e.target.dataset.armed === "1"){
+      state = {results:{}, funding: state.funding, schedule:{}};
+      window.__editing = {};
+      window.__schedEditing = {};
+      e.target.textContent = "토너먼트 초기화";
+      e.target.dataset.armed = "0";
+      commitState();
+    } else {
+      e.target.dataset.armed = "1";
+      e.target.textContent = "한 번 더 누르면 초기화";
+      setTimeout(function(){
+        if(e.target.dataset.armed === "1"){
+          e.target.dataset.armed = "0";
+          e.target.textContent = "토너먼트 초기화";
+        }
+      }, 3500);
+    }
+  }
+});
+
+document.addEventListener("change", function(e){
+  if(e.target.matches(".sched-date")){
+    if(!canEdit()) return;
+    var id = e.target.dataset.match;
+    var sc = state.schedule[id] || {date:"", session:"lunch"};
+    sc.date = e.target.value;
+    state.schedule[id] = sc;
+    if(sc.date) delete window.__schedEditing[id];
+    commitState();
+  }
+});
+
+document.getElementById("fundingInput").addEventListener("change", function(e){
+  if(!canEdit()) return;
+  var v = Number(e.target.value);
+  if(e.target.value === "" || !isFinite(v) || v < 0){
+    e.target.value = state.funding;
+    return;
+  }
+  state.funding = v;
+  commitState();
+});
+
+var MODE_TOGGLE_LABEL = {
+  classic: "⚙ 옵션 게임 보기 (정액 Credit)",
+  flat: "⚙ 옵션 게임 보기 (점수차 Credit)",
+  margin: "⚙ 기본 방식으로 보기"
+};
+
+function syncModeToggle(){
+  var btn = document.getElementById("modeToggle");
+  if(!btn) return;
+  btn.textContent = MODE_TOGGLE_LABEL[displayMode];
+  btn.classList.toggle("active", displayMode !== "classic");
+}
+
+document.getElementById("modeToggle").addEventListener("click", function(){
+  var idx = MODE_ORDER.indexOf(displayMode);
+  displayMode = MODE_ORDER[(idx + 1) % MODE_ORDER.length];
+  try{ localStorage.setItem(MODE_KEY, displayMode); }catch(e){}
+  syncModeToggle();
+  render();
+});
+
+renderHeroBalls();
+syncModeToggle();
+render();
+initFirebase();
+
+})();
+</script>
+</body>
+</html>
