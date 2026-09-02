@@ -200,6 +200,33 @@ button{font-family:inherit;}
   grid-column:1 / -1; font-size:0.82rem; color:rgba(238,242,230,0.55);
 }
 
+/* ---------- hero fixtures / comments split ---------- */
+.fixtures-cols{display:flex; gap:20px;}
+.fixtures-col{flex:1 1 0; min-width:0;}
+.comments-col{border-left:1px solid rgba(255,255,255,0.14); padding-left:20px;}
+.comments-feed{display:flex; flex-direction:column; gap:7px; max-height:240px; overflow-y:auto;}
+.comment-line{font-size:0.76rem; line-height:1.35; color:rgba(238,242,230,0.9); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.comment-line .cname{font-weight:800; color:#ffd24d; margin-right:4px;}
+.comments-empty{font-size:0.8rem; color:rgba(238,242,230,0.5);}
+
+/* ---------- comment form / list ---------- */
+.comment-form{display:flex; flex-wrap:wrap; gap:10px; margin-bottom:16px;}
+.comment-form input{
+  border:1px solid var(--line); background:var(--surface); color:var(--ink);
+  border-radius:10px; padding:9px 12px; font-size:0.85rem; outline:none;
+}
+.comment-form input#commentName{flex:0 1 140px;}
+.comment-form input#commentText{flex:1 1 260px;}
+.comment-list{display:flex; flex-direction:column; gap:8px;}
+.comment-item{
+  background:var(--surface); border:1px solid var(--line); border-radius:12px;
+  padding:10px 14px; font-size:0.86rem; display:flex; gap:8px; align-items:baseline; flex-wrap:wrap;
+}
+.comment-item .cname{font-weight:800; color:var(--gold); flex:none;}
+.comment-item .ctext{flex:1 1 auto; min-width:0; word-break:break-word;}
+.comment-item .ctime{font-size:0.7rem; color:var(--ink-soft); flex:none; margin-left:auto;}
+.comment-empty{font-size:0.85rem; color:var(--ink-soft);}
+
 /* ---------- pot bar ---------- */
 .potbar{
   margin:-52px auto 0;
@@ -260,7 +287,7 @@ section{margin-top:56px;}
   background:var(--surface); border:1px solid var(--line); border-radius:16px;
   overflow-x:auto; box-shadow:0 10px 30px -20px var(--shadow);
 }
-table.seed{border-collapse:collapse; width:100%; min-width:840px;}
+table.seed{border-collapse:collapse; width:100%; min-width:740px;}
 table.seed th, table.seed td{padding:12px 14px; text-align:left; border-bottom:1px solid var(--line); font-size:0.9rem;}
 table.seed th{
   font-size:0.72rem; text-transform:uppercase; letter-spacing:0.08em; color:var(--ink-soft);
@@ -475,6 +502,9 @@ footer.foot{margin-top:70px; text-align:center; font-size:0.78rem; color:var(--i
   .funding-control{margin-left:0;}
   .band-matches .match-card{flex-basis:100%; max-width:none;}
   .hero-fixtures{flex-basis:100%; min-width:0;}
+  .fixtures-cols{flex-direction:column;}
+  .comments-col{border-left:none; padding-left:0; border-top:1px solid rgba(255,255,255,0.14); padding-top:14px; margin-top:6px;}
+  .comment-form input#commentName{flex-basis:100%;}
 }
 </style>
 </head>
@@ -496,8 +526,16 @@ footer.foot{margin-top:70px; text-align:center; font-size:0.78rem; color:var(--i
     </div>
     <div class="hero-fixtures">
       <button type="button" class="mode-toggle" id="modeToggle" style="display:none;">⚙ 옵션 게임 보기</button>
-      <div class="fixtures-title">Upcoming fixtures</div>
-      <div class="fixtures-list" id="fixturesList"></div>
+      <div class="fixtures-cols">
+        <div class="fixtures-col">
+          <div class="fixtures-title">Upcoming fixtures</div>
+          <div class="fixtures-list" id="fixturesList"></div>
+        </div>
+        <div class="fixtures-col comments-col">
+          <div class="fixtures-title">최근 응원</div>
+          <div class="comments-feed" id="commentsFeed"></div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -515,7 +553,6 @@ footer.foot{margin-top:70px; text-align:center; font-size:0.78rem; color:var(--i
       <span class="unit">원 / 게임</span>
     </div>
     <div class="funding-control option-note" id="optionNote" style="display:none;"></div>
-    <button class="reset-btn" id="resetBtn" type="button">토너먼트 초기화</button>
   </div>
 </div>
 
@@ -554,7 +591,6 @@ footer.foot{margin-top:70px; text-align:center; font-size:0.78rem; color:var(--i
       <table class="seed">
         <thead>
           <tr>
-            <th class="num">시드</th>
             <th>선수</th>
             <th class="num" id="fundingColHead">펀딩</th>
             <th>토너먼트</th>
@@ -567,6 +603,17 @@ footer.foot{margin-top:70px; text-align:center; font-size:0.78rem; color:var(--i
         <tbody id="seedBody"></tbody>
       </table>
     </div>
+  </section>
+
+  <section id="commentSection">
+    <div class="section-head"><h2>한줄 남기기</h2></div>
+    <div class="section-note">닉네임과 짧은 응원 한마디를 남겨보세요 — 위쪽 UPCOMING FIXTURES 옆에도 실시간으로 함께 보여요.</div>
+    <div class="comment-form">
+      <input type="text" id="commentName" maxlength="12" placeholder="닉네임">
+      <input type="text" id="commentText" maxlength="60" placeholder="응원 한마디를 남겨주세요">
+      <button type="button" class="btn btn-confirm" id="commentSubmit">남기기</button>
+    </div>
+    <div class="comment-list" id="commentList"></div>
   </section>
 
   <footer class="foot">전적·점수는 이 링크를 보는 모두에게 실시간으로 동기화됩니다 · 확정·수정은 지정된 관리자 계정만 저장할 수 있습니다 · 게임비는 상금 풀과 별개로 패자가 별도 정산</footer>
@@ -686,7 +733,50 @@ var state = normalizeStateObj(null);
 
 /* ---------------- Firebase: auth + realtime shared state ---------------- */
 
-var auth = null, db = null, tourneyDoc = null;
+var auth = null, db = null, tourneyDoc = null, commentsCol = null;
+var comments = [];
+
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, function(c){
+    return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];
+  });
+}
+
+function renderComments(){
+  var feedEl = document.getElementById("commentsFeed");
+  var listEl = document.getElementById("commentList");
+  if(comments.length === 0){
+    if(feedEl) feedEl.innerHTML = '<div class="comments-empty">아직 응원 코멘트가 없습니다.</div>';
+    if(listEl) listEl.innerHTML = '<div class="comment-empty">가장 먼저 한줄 남겨보세요!</div>';
+    return;
+  }
+  if(feedEl){
+    feedEl.innerHTML = comments.slice(0,8).map(function(c){
+      return '<div class="comment-line"><span class="cname">'+escapeHtml(c.name)+'</span>'+escapeHtml(c.text)+'</div>';
+    }).join("");
+  }
+  if(listEl){
+    listEl.innerHTML = comments.map(function(c){
+      return '<div class="comment-item"><span class="cname">'+escapeHtml(c.name)+'</span><span class="ctext">'+escapeHtml(c.text)+'</span></div>';
+    }).join("");
+  }
+}
+
+function submitComment(){
+  if(!commentsCol) return;
+  var nameEl = document.getElementById("commentName");
+  var textEl = document.getElementById("commentText");
+  var name = nameEl.value.trim();
+  var text = textEl.value.trim();
+  if(!name || !text) return;
+  commentsCol.add({
+    name: name.slice(0,20),
+    text: text.slice(0,80),
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  }).then(function(){
+    textEl.value = "";
+  }).catch(function(e){ alert("등록 실패: " + e.message); });
+}
 
 function syncAuthUI(){
   var statusEl = document.getElementById("authStatus");
@@ -728,12 +818,24 @@ function initFirebase(){
     console.warn("tourney snapshot error", err);
   });
 
+  commentsCol = db.collection("billiard-tourney-2026-comments");
+  commentsCol.orderBy("createdAt", "desc").limit(20).onSnapshot(function(snap){
+    comments = snap.docs.map(function(d){ return d.data(); });
+    renderComments();
+  }, function(err){
+    console.warn("comments snapshot error", err);
+  });
+
   document.getElementById("loginBtn").addEventListener("click", function(){
     var provider = new firebase.auth.GoogleAuthProvider();
     auth.signInWithPopup(provider).catch(function(e){ alert("로그인 실패: " + e.message); });
   });
   document.getElementById("logoutBtn").addEventListener("click", function(){
     auth.signOut();
+  });
+  document.getElementById("commentSubmit").addEventListener("click", submitComment);
+  document.getElementById("commentText").addEventListener("keydown", function(e){
+    if(e.key === "Enter") submitComment();
   });
 }
 
@@ -1058,7 +1160,6 @@ function renderSeedTable(bracket){
       ? '<span class="mono">'+fmtWon(owed)+'원</span><div class="funding-sub">'+sub+'</div>'
       : '<span class="mono" style="color:var(--ink-soft);">-</span>';
     return '<tr>'+
-      '<td class="num">'+p.seed+'</td>'+
       '<td><div class="name-cell">'+ballHtml(p,30)+'<span>'+p.name+'</span></div></td>'+
       '<td class="num">'+fundingHtml+'</td>'+
       '<td>'+lrHtml+'</td>'+
@@ -1244,8 +1345,6 @@ function renderPot(bracket){
   var label = document.getElementById("potLabel");
   var fundingControl = document.getElementById("fundingControl");
   var optionNote = document.getElementById("optionNote");
-  var resetBtn = document.getElementById("resetBtn");
-  if(resetBtn) resetBtn.style.display = canEdit() ? "" : "none";
   var info = computeCreditInfo(bracket);
   if(info){
     if(label) label.textContent = "옵션 기금 잔액";
@@ -1472,26 +1571,6 @@ document.addEventListener("click", function(e){
       return;
     }
   }
-  if(e.target.id === "resetBtn"){
-    if(!canEdit()) return;
-    if(e.target.dataset.armed === "1"){
-      state = {results:{}, funding: state.funding, schedule:{}};
-      window.__editing = {};
-      window.__schedEditing = {};
-      e.target.textContent = "토너먼트 초기화";
-      e.target.dataset.armed = "0";
-      commitState();
-    } else {
-      e.target.dataset.armed = "1";
-      e.target.textContent = "한 번 더 누르면 초기화";
-      setTimeout(function(){
-        if(e.target.dataset.armed === "1"){
-          e.target.dataset.armed = "0";
-          e.target.textContent = "토너먼트 초기화";
-        }
-      }, 3500);
-    }
-  }
 });
 
 document.addEventListener("change", function(e){
@@ -1541,6 +1620,7 @@ document.getElementById("modeToggle").addEventListener("click", function(){
 renderHeroBalls();
 syncModeToggle();
 render();
+renderComments();
 initFirebase();
 
 })();
