@@ -1391,7 +1391,7 @@ function renderBracketTree(bracket){
     html += bandHtml("wb", "wb", WB_ROUND_LABEL[rnd.num] || ("승자 "+rnd.num+"라운드"), rnd.matches);
   });
   if(wbRounds.length) html += '<div class="spine"></div>';
-  html += bandHtml("open", "open", "오픈대전", openRound.matches, "승리가 예측되는 사람에게 한표! 게임 당 한번씩 참여해 주세요 ^^");
+  html += bandHtml("open", "open", "오픈대전", openRound.matches, "승리가 예측되는 사람에게 한표! 게임별로 참여해 주세요 ^^");
   if(lbRounds.length) html += '<div class="spine"></div>';
   lbRounds.forEach(function(rnd){
     html += bandHtml("lb", "lb", LB_ROUND_LABEL[rnd.num] || ("패자 "+rnd.num+"라운드"), rnd.matches);
