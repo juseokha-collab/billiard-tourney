@@ -332,6 +332,7 @@ details.info p + p{margin-top:8px;}
 }
 .band.open .band-matches{justify-content:center;}
 .band-matches .match-card{flex:1 1 190px; max-width:210px;}
+.band-note{font-size:0.82rem; color:var(--ink-soft); text-align:center; margin-top:12px;}
 .spine{
   height:2px; background:linear-gradient(90deg, transparent, var(--gold-soft), transparent);
   margin:2px 0;
@@ -1364,10 +1365,11 @@ function voteBlockHtml(m){
 var WB_ROUND_LABEL = {2:"승자 1차전", 3:"승자 2차전", 4:"승자 최종전"};
 var LB_ROUND_LABEL = {1:"패자 1차전", 2:"패자 2차전", 3:"패자 최종전"};
 
-function bandHtml(cls, dotCls, label, matches){
+function bandHtml(cls, dotCls, label, matches, note){
   return '<div class="band '+cls+'">'+
     '<div class="band-head"><span class="band-dot '+dotCls+'"></span><h3>'+label+'</h3></div>'+
     '<div class="band-matches">'+matches.map(function(m){ return matchCardHtml(m); }).join("")+'</div>'+
+    (note ? '<div class="band-note">'+note+'</div>' : '')+
     '</div>';
 }
 
@@ -1389,7 +1391,7 @@ function renderBracketTree(bracket){
     html += bandHtml("wb", "wb", WB_ROUND_LABEL[rnd.num] || ("승자 "+rnd.num+"라운드"), rnd.matches);
   });
   if(wbRounds.length) html += '<div class="spine"></div>';
-  html += bandHtml("open", "open", "오픈대전", openRound.matches);
+  html += bandHtml("open", "open", "오픈대전", openRound.matches, "승리가 예측되는 사람에게 한표! 게임 당 한번씩 참여해 주세요 ^^");
   if(lbRounds.length) html += '<div class="spine"></div>';
   lbRounds.forEach(function(rnd){
     html += bandHtml("lb", "lb", LB_ROUND_LABEL[rnd.num] || ("패자 "+rnd.num+"라운드"), rnd.matches);
