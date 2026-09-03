@@ -414,6 +414,34 @@ details.info p + p{margin-top:8px;}
 .validation{font-size:0.72rem; color:var(--lb); margin-top:4px; min-height:1em;}
 .gf-match .validation{color:var(--gold-soft);}
 
+/* ---------- winner prediction voting ---------- */
+.vote-block{margin-top:8px; padding-top:8px; border-top:1px dashed var(--line);}
+.vote-bar{
+  display:flex; height:6px; border-radius:999px; overflow:hidden;
+  background:var(--surface-2); margin-bottom:6px;
+}
+.vote-bar-fill{height:100%; transition:width .25s;}
+.vote-bar-fill.p1{background:var(--wb);}
+.vote-bar-fill.p2{background:var(--lb);}
+.vote-buttons{display:flex; gap:6px;}
+.vote-btn{
+  flex:1 1 0; min-width:0; display:flex; align-items:center; justify-content:space-between; gap:4px;
+  border:1px solid var(--line); background:var(--surface-2); color:var(--ink);
+  border-radius:8px; padding:5px 8px; font-size:0.72rem; font-weight:700; cursor:pointer;
+}
+.vote-btn .vname{overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.vote-btn .vpct{flex:none; color:var(--ink-soft);}
+.vote-btn.picked{border-color:var(--gold); background:var(--gold-soft); color:#241c00;}
+.vote-btn.picked .vpct{color:#241c00;}
+.vote-btn.locked{cursor:default; opacity:0.85;}
+.vote-btn.correct{border-color:var(--good);}
+.vote-count{font-size:0.66rem; color:var(--ink-soft); margin-top:4px; text-align:right;}
+.gf-match .vote-block{border-top-color:rgba(255,255,255,0.16);}
+.gf-match .vote-bar{background:rgba(0,0,0,0.25);}
+.gf-match .vote-btn{background:rgba(255,255,255,0.06); border-color:rgba(255,255,255,0.2); color:var(--felt-ink);}
+.gf-match .vote-btn .vpct{color:rgba(238,242,230,0.7);}
+.gf-match .vote-count{color:rgba(238,242,230,0.6);}
+
 .empty-track{
   font-size:0.88rem; color:var(--ink-soft); padding:20px; background:var(--surface-2);
   border:1px dashed var(--line); border-radius:14px;
@@ -729,8 +757,47 @@ var state = normalizeStateObj(null);
 
 /* ---------------- Firebase: auth + realtime shared state ---------------- */
 
-var auth = null, db = null, tourneyDoc = null, commentsCol = null;
+var auth = null, db = null, tourneyDoc = null, commentsCol = null, votesCol = null;
 var comments = [];
+
+var VOTER_ID_KEY = "billiard-tourney-2026-voter-id";
+function getVoterId(){
+  try{
+    var id = localStorage.getItem(VOTER_ID_KEY);
+    if(!id){
+      id = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : ("v" + Date.now() + Math.random().toString(36).slice(2));
+      localStorage.setItem(VOTER_ID_KEY, id);
+    }
+    return id;
+  }catch(e){
+    return "anon-" + Math.random().toString(36).slice(2);
+  }
+}
+var VOTER_ID = getVoterId();
+var votesByMatch = {};
+
+function recomputeVotes(docs){
+  var byMatch = {};
+  docs.forEach(function(d){
+    var v = d.data();
+    if(!v || !v.matchId || (v.pick !== 1 && v.pick !== 2)) return;
+    var m = byMatch[v.matchId] || {1:0, 2:0, mine:null};
+    m[v.pick] = (m[v.pick] || 0) + 1;
+    if(v.voterId === VOTER_ID) m.mine = v.pick;
+    byMatch[v.matchId] = m;
+  });
+  votesByMatch = byMatch;
+}
+
+function castVote(matchId, side){
+  if(!votesCol) return;
+  votesCol.doc(matchId + "_" + VOTER_ID).set({
+    matchId: matchId,
+    voterId: VOTER_ID,
+    pick: side,
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+  }).catch(function(e){ console.warn("vote failed", e); });
+}
 
 function escapeHtml(s){
   return String(s).replace(/[&<>"']/g, function(c){
@@ -820,6 +887,14 @@ function initFirebase(){
     renderComments();
   }, function(err){
     console.warn("comments snapshot error", err);
+  });
+
+  votesCol = db.collection("billiard-tourney-2026-votes");
+  votesCol.onSnapshot(function(snap){
+    recomputeVotes(snap.docs);
+    render();
+  }, function(err){
+    console.warn("votes snapshot error", err);
   });
 
   document.getElementById("loginBtn").addEventListener("click", function(){
@@ -1248,7 +1323,7 @@ function matchCardHtml(m){
       scheduleControlHtml(m.id)+
       '</div>';
   }
-  return '<div class="match-card">'+body+actions+'</div>';
+  return '<div class="match-card">'+body+actions+voteBlockHtml(m)+'</div>';
 }
 
 function canConfirm(m){
@@ -1257,6 +1332,33 @@ function canConfirm(m){
   var reached1 = Number(s1) >= m.p1.point;
   var reached2 = Number(s2) >= m.p2.point;
   return reached1 !== reached2;
+}
+
+// Anyone open on the site -- not just the two admins -- can pick who they
+// think will win each still-open match. One pick per match per browser
+// (keyed by an anonymous id stashed in localStorage, not by account), and
+// the pick locks in once the match is actually confirmed.
+function voteBlockHtml(m){
+  if(!m.p2) return "";
+  var info = votesByMatch[m.id] || {1:0, 2:0, mine:null};
+  var total = info[1] + info[2];
+  var pct1 = total ? Math.round(info[1]/total*100) : 0;
+  var pct2 = total ? Math.round(info[2]/total*100) : 0;
+  var locked = m.confirmed;
+  function sideBtn(side, p){
+    var pct = side === 1 ? pct1 : pct2;
+    var picked = info.mine === side;
+    var isWinner = m.confirmed && m.winner === p;
+    var cls = "vote-btn" + (picked ? " picked" : "") + (locked ? " locked" : "") + (isWinner ? " correct" : "");
+    var attrs = locked ? " disabled" : ' data-action="vote" data-match="'+m.id+'" data-side="'+side+'"';
+    return '<button type="button" class="'+cls+'"'+attrs+'>'+
+      '<span class="vname">'+p.name+'</span><span class="vpct mono">'+pct+'%</span></button>';
+  }
+  return '<div class="vote-block">'+
+    '<div class="vote-bar"><div class="vote-bar-fill p1" style="width:'+pct1+'%"></div><div class="vote-bar-fill p2" style="width:'+pct2+'%"></div></div>'+
+    '<div class="vote-buttons">'+sideBtn(1,m.p1)+sideBtn(2,m.p2)+'</div>'+
+    '<div class="vote-count">'+(total ? total+'명 예측'+(locked?' · 마감':'') : '아직 예측 없음')+'</div>'+
+    '</div>';
 }
 
 var WB_ROUND_LABEL = {2:"승자 1차전", 3:"승자 2차전", 4:"승자 최종전"};
@@ -1329,7 +1431,7 @@ function gfMatchHtml(m, label, tag){
       scheduleControlHtml(m.id)+
       '</div>';
   }
-  return '<div class="gf-match"><div class="gf-label">'+label+'</div>'+body+actions+'</div>';
+  return '<div class="gf-match"><div class="gf-label">'+label+'</div>'+body+actions+voteBlockHtml(m)+'</div>';
 }
 
 var OPTION_NOTE_TEXT = {
@@ -1530,9 +1632,13 @@ document.addEventListener("input", function(e){
 document.addEventListener("click", function(e){
   var btn = e.target.closest("[data-action]");
   if(btn){
-    if(!canEdit()) return;
     var action = btn.dataset.action;
     var id = btn.dataset.match;
+    if(action === "vote"){
+      castVote(id, Number(btn.dataset.side));
+      return;
+    }
+    if(!canEdit()) return;
     if(action === "confirm"){
       var r = state.results[id];
       var idx = MATCH_INDEX[id];
