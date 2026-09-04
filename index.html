@@ -344,6 +344,9 @@ details.info p + p{margin-top:8px;}
 }
 .match-card.bye{background:var(--surface-2); border-style:dashed;}
 .match-card .bye-text{font-size:0.8rem; color:var(--ink-soft); display:flex; align-items:center; gap:6px; padding:4px 2px;}
+.preview-wait{display:flex; flex-direction:column; gap:5px; padding:9px 8px;}
+.preview-wait .wait-head{display:flex; align-items:center; gap:7px; font-size:0.86rem; font-weight:700; color:var(--ink);}
+.preview-wait .wait-sub{font-size:0.74rem; color:var(--ink-soft); padding-left:25px;}
 .kind-label{font-size:0.64rem; font-weight:700; color:var(--gold); text-transform:uppercase; letter-spacing:0.03em; margin-bottom:4px;}
 .player-row{
   display:flex; align-items:center; gap:5px; padding:3px 2px; border-radius:7px;
@@ -1395,7 +1398,10 @@ function bandHtml(cls, dotCls, label, matches, note){
 // result first) -- shown as a plain "대기 중" card, same style as the
 // bye/waiting cards used once real rounds exist.
 function previewWaitingCardHtml(p){
-  return '<div class="match-card bye"><div class="bye-text">'+ballHtml(p,18)+'<b>'+p.name+'</b>&nbsp;대기 중 · 오픈대전 결과를 기다립니다</div></div>';
+  return '<div class="match-card bye preview-wait">'+
+    '<div class="wait-head">'+ballHtml(p,18)+'<b>'+p.name+'</b></div>'+
+    '<div class="wait-sub">오픈대전 결과 대기중</div>'+
+    '</div>';
 }
 
 function previewBandHtml(cls, dotCls, label, players){
