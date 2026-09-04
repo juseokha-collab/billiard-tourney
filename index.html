@@ -1151,6 +1151,22 @@ function computeBracket(results){
     if(lbPool.length === 1) lbChampion = lbPool[0];
   }
 
+  // Real WB round-2 / LB round-1 pairings can't be built until every open
+  // match is in (the closest-match rule that decides who skips ahead needs
+  // all five results) -- but there's no reason to hide a winner/loser that
+  // IS already known. previewWB/previewLB list them as "waiting" so each
+  // side's bracket starts filling in as results land, one open match at a
+  // time, instead of staying blank until the whole round finishes.
+  var previewWB = [], previewLB = [];
+  if(!round1.complete){
+    round1.matches.forEach(function(m){
+      if(m.confirmed){
+        previewWB.push(m.winner);
+        previewLB.push(m.loser);
+      }
+    });
+  }
+
   // ---- Grand final ----
   var gf1 = null, gf2 = null, champion = null, runnerUp = null, needsReset = false, complete = false;
   if(wbChampion && lbChampion){
@@ -1189,7 +1205,8 @@ function computeBracket(results){
   return {
     rounds:rounds, wbChampion:wbChampion, lbChampion:lbChampion, wbRunnerUp:wbRunnerUp,
     gf1:gf1, gf2:gf2, needsReset:needsReset, champion:champion, runnerUp:runnerUp,
-    complete:complete, potMatches:potMatches, liveRecord:liveRecord
+    complete:complete, potMatches:potMatches, liveRecord:liveRecord,
+    previewWB:previewWB, previewLB:previewLB
   };
 }
 
@@ -1373,6 +1390,21 @@ function bandHtml(cls, dotCls, label, matches, note){
     '</div>';
 }
 
+// A player whose open match is already confirmed but whose round-2
+// opponent isn't decided yet (the closest-match rule needs every open
+// result first) -- shown as a plain "대기 중" card, same style as the
+// bye/waiting cards used once real rounds exist.
+function previewWaitingCardHtml(p){
+  return '<div class="match-card bye"><div class="bye-text">'+ballHtml(p,18)+'<b>'+p.name+'</b>&nbsp;대기 중 · 오픈대전 결과를 기다립니다</div></div>';
+}
+
+function previewBandHtml(cls, dotCls, label, players){
+  return '<div class="band '+cls+'">'+
+    '<div class="band-head"><span class="band-dot '+dotCls+'"></span><h3>'+label+'</h3></div>'+
+    '<div class="band-matches">'+players.map(previewWaitingCardHtml).join("")+'</div>'+
+    '</div>';
+}
+
 function renderBracketTree(bracket){
   var el = document.getElementById("bracketTree");
   var openRound = bracket.rounds.find(function(r){ return r.type === "WB" && r.num === 1; });
@@ -1387,15 +1419,25 @@ function renderBracketTree(bracket){
   }
 
   var html = "";
-  wbRounds.forEach(function(rnd){
-    html += bandHtml("wb", "wb", WB_ROUND_LABEL[rnd.num] || ("승자 "+rnd.num+"라운드"), rnd.matches);
-  });
-  if(wbRounds.length) html += '<div class="spine"></div>';
+  if(wbRounds.length){
+    wbRounds.forEach(function(rnd){
+      html += bandHtml("wb", "wb", WB_ROUND_LABEL[rnd.num] || ("승자 "+rnd.num+"라운드"), rnd.matches);
+    });
+    html += '<div class="spine"></div>';
+  } else if(bracket.previewWB && bracket.previewWB.length){
+    html += previewBandHtml("wb", "wb", (WB_ROUND_LABEL[2] || "승자 1차전") + " · 대기", bracket.previewWB);
+    html += '<div class="spine"></div>';
+  }
   html += bandHtml("open", "open", "오픈대전", openRound.matches, "승리가 예측되는 사람에게 한표! 게임별로 참여해 주세요 ^^");
-  if(lbRounds.length) html += '<div class="spine"></div>';
-  lbRounds.forEach(function(rnd){
-    html += bandHtml("lb", "lb", LB_ROUND_LABEL[rnd.num] || ("패자 "+rnd.num+"라운드"), rnd.matches);
-  });
+  if(lbRounds.length){
+    html += '<div class="spine"></div>';
+    lbRounds.forEach(function(rnd){
+      html += bandHtml("lb", "lb", LB_ROUND_LABEL[rnd.num] || ("패자 "+rnd.num+"라운드"), rnd.matches);
+    });
+  } else if(bracket.previewLB && bracket.previewLB.length){
+    html += '<div class="spine"></div>';
+    html += previewBandHtml("lb", "lb", (LB_ROUND_LABEL[1] || "패자 1차전") + " · 대기", bracket.previewLB);
+  }
 
   el.innerHTML = html;
 }
