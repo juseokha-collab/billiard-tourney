@@ -1024,8 +1024,16 @@ function generateRound(prefix, roundNum, poolAsc, results, forcedWaiting){
 
   var aComplete = aMatches.every(function(m){ return m.confirmed; });
   if(!aComplete){
-    matches.push({id: prefix+"-"+roundNum+"-WAIT", waiting:true, p1:waiting});
-    return {matches:matches, complete:false, winners:null, losers:null, extraRound:null};
+    matches.push({id: prefix+"-"+roundNum+"-WAIT", waiting:true, p1:waiting, waitKind:"bye"});
+    // The direct-advance player's real 2차전 opponent (the 패자부활전
+    // winner) can't be known until the two preliminary matches above are
+    // both confirmed -- but there's no reason to hide that this player IS
+    // already waiting in the next round too, so a one-card preview of that
+    // round is synthesized here the same way the extraRound normally works.
+    return {
+      matches:matches, complete:false, winners:null, losers:null,
+      extraRound: {matches:[{id: prefix+"-"+roundNum+"-WAIT2", waiting:true, p1:waiting}]}
+    };
   }
 
   var W = aMatches.map(function(m){ return m.winner; });
@@ -1338,7 +1346,8 @@ function matchCardHtml(m){
     return '<div class="match-card bye"><div class="bye-text">'+ballHtml(m.p1,18)+'<b>'+m.p1.name+'</b>&nbsp;부전승</div></div>';
   }
   if(m.waiting){
-    return '<div class="match-card bye"><div class="bye-text">'+ballHtml(m.p1,18)+'<b>'+m.p1.name+'</b>&nbsp;대기 중 · 도전전 결과를 기다립니다</div></div>';
+    var waitText = m.waitKind === "bye" ? "부전승" : "대기 중 · 도전전 결과를 기다립니다";
+    return '<div class="match-card bye"><div class="bye-text">'+ballHtml(m.p1,18)+'<b>'+m.p1.name+'</b>&nbsp;'+waitText+'</div></div>';
   }
   var editingSet = window.__editing || {};
   var editable = canEdit() && (!m.confirmed || editingSet[m.id]);
@@ -1431,6 +1440,7 @@ function previewBandHtml(cls, dotCls, label, players, note){
 }
 
 var PAIRING_RULE_NOTE = "아슬아슬한 승부의 승자·패자는 2차전 직행(동률경우 하점자 우선), 조편성은 점수순으로 대결(동률경우 시드 우선)";
+var BYE_NEXT_ROUND_NOTE = "부전승 대기자는 1차전의 패자부활전에서 승리한 선수와 2차전에서 만나게 됩니다";
 
 function renderBracketTree(bracket){
   var el = document.getElementById("bracketTree");
@@ -1445,10 +1455,17 @@ function renderBracketTree(bracket){
     return;
   }
 
+  // A round made up entirely of "waiting" placeholder cards is a one-step
+  // look-ahead preview (the direct-advance player's real opponent isn't
+  // decided yet) -- worth a note explaining what they're waiting for.
+  function allWaiting(rnd){
+    return rnd.matches.length > 0 && rnd.matches.every(function(m){ return m.waiting; });
+  }
+
   var html = "";
   if(wbRounds.length){
     wbRounds.forEach(function(rnd){
-      html += bandHtml("wb", "wb", WB_ROUND_LABEL[rnd.num] || ("승자 "+rnd.num+"라운드"), rnd.matches);
+      html += bandHtml("wb", "wb", WB_ROUND_LABEL[rnd.num] || ("승자 "+rnd.num+"라운드"), rnd.matches, allWaiting(rnd) ? BYE_NEXT_ROUND_NOTE : null);
     });
     html += '<div class="spine"></div>';
   } else if(bracket.previewWB && bracket.previewWB.length){
@@ -1459,7 +1476,7 @@ function renderBracketTree(bracket){
   if(lbRounds.length){
     html += '<div class="spine"></div>';
     lbRounds.forEach(function(rnd){
-      html += bandHtml("lb", "lb", LB_ROUND_LABEL[rnd.num] || ("패자 "+rnd.num+"라운드"), rnd.matches);
+      html += bandHtml("lb", "lb", LB_ROUND_LABEL[rnd.num] || ("패자 "+rnd.num+"라운드"), rnd.matches, allWaiting(rnd) ? BYE_NEXT_ROUND_NOTE : null);
     });
   } else if(bracket.previewLB && bracket.previewLB.length){
     html += '<div class="spine"></div>';
