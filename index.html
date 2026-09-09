@@ -1346,8 +1346,13 @@ function matchCardHtml(m){
     return '<div class="match-card bye"><div class="bye-text">'+ballHtml(m.p1,18)+'<b>'+m.p1.name+'</b>&nbsp;부전승</div></div>';
   }
   if(m.waiting){
-    var waitText = m.waitKind === "bye" ? "부전승" : "대기 중 · 도전전 결과를 기다립니다";
-    return '<div class="match-card bye"><div class="bye-text">'+ballHtml(m.p1,18)+'<b>'+m.p1.name+'</b>&nbsp;'+waitText+'</div></div>';
+    if(m.waitKind === "bye"){
+      return '<div class="match-card bye"><div class="bye-text">'+ballHtml(m.p1,18)+'<b>'+m.p1.name+'</b>&nbsp;부전승</div></div>';
+    }
+    return '<div class="match-card bye preview-wait">'+
+      '<div class="wait-head">'+ballHtml(m.p1,18)+'<b>'+m.p1.name+'</b> 대기 중</div>'+
+      '<div class="wait-sub">패자부활전 결과를 기다립니다</div>'+
+      '</div>';
   }
   var editingSet = window.__editing || {};
   var editable = canEdit() && (!m.confirmed || editingSet[m.id]);
