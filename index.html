@@ -1350,7 +1350,7 @@ function matchCardHtml(m){
     actions = '<div class="match-actions">'+
       '<button class="btn btn-confirm" data-action="confirm" data-match="'+m.id+'" '+(canConfirm(m) ? "" : "disabled")+'>확정</button>'+
       (m.confirmed ? '<button class="btn btn-edit" data-action="cancel-edit" data-match="'+m.id+'">취소</button>' : '')+
-      scheduleControlHtml(m.id, m.confirmed)+
+      scheduleControlHtml(m.id, m.confirmed && !editable)+
       '</div>'+
       '<div class="validation" id="val-'+m.id+'"></div>';
   } else {
@@ -1359,7 +1359,7 @@ function matchCardHtml(m){
     actions = '<div class="match-actions match-actions-done">'+
       editIconHtml+
       (kindText ? '<span class="kind-label-inline">'+kindText+'</span>' : '')+
-      scheduleControlHtml(m.id, m.confirmed)+
+      scheduleControlHtml(m.id, m.confirmed && !editable)+
       '</div>';
   }
   return '<div class="match-card">'+body+actions+voteBlockHtml(m)+'</div>';
@@ -1494,12 +1494,12 @@ function gfMatchHtml(m, label, tag){
     actions = '<div class="match-actions">'+
       '<button class="btn btn-confirm" data-action="confirm" data-match="'+m.id+'" '+(canConfirm(m) ? "" : "disabled")+'>확정</button>'+
       (m.confirmed ? '<button class="btn btn-edit" data-action="cancel-edit" data-match="'+m.id+'">취소</button>' : '')+
-      scheduleControlHtml(m.id, m.confirmed)+
+      scheduleControlHtml(m.id, m.confirmed && !editable)+
       '</div><div class="validation" id="val-'+m.id+'"></div>';
   } else {
     var editIconHtml = canEdit() ? '<button class="btn btn-icon" data-action="edit" data-match="'+m.id+'" title="결과 수정" aria-label="결과 수정">✏️</button>' : '';
     actions = '<div class="match-actions match-actions-done">'+editIconHtml+
-      scheduleControlHtml(m.id, m.confirmed)+
+      scheduleControlHtml(m.id, m.confirmed && !editable)+
       '</div>';
   }
   return '<div class="gf-match"><div class="gf-label">'+label+'</div>'+body+actions+voteBlockHtml(m)+'</div>';
