@@ -400,6 +400,8 @@ details.info p + p{margin-top:8px;}
 }
 .sched-chip:hover{filter:brightness(1.08);}
 .gf-match .sched-chip{background:var(--gold-soft); color:#241c00;}
+.sched-chip.sched-done{background:#8a8a80; color:#fff; cursor:default;}
+.gf-match .sched-chip.sched-done{background:rgba(255,255,255,0.22); color:#fff;}
 .sched-inline{display:inline-flex; align-items:center; gap:4px; flex-wrap:wrap; margin-left:auto;}
 .sched-date{
   width:26px; border:1px solid var(--line); border-radius:6px; background:var(--surface-2);
@@ -1293,8 +1295,24 @@ function formatSchedule(sched){
   return mm+"월"+dd+"일 "+(sched.session === "dinner" ? "저녁" : "점심");
 }
 
-function scheduleControlHtml(matchId){
+function formatDateOnly(sched){
+  var d = new Date(sched.date+"T00:00:00");
+  if(isNaN(d.getTime())) return "";
+  var mm = String(d.getMonth()+1).padStart(2,"0");
+  var dd = String(d.getDate()).padStart(2,"0");
+  return mm+"월"+dd+"일";
+}
+
+// Once a match is confirmed, its schedule chip becomes a plain, locked
+// "경기종료" marker instead of the editable lunch/dinner chip -- the game
+// already happened, so there's nothing left to schedule and no reason to
+// let anyone (admin included) reopen the date/session picker for it.
+function scheduleControlHtml(matchId, confirmed){
   var sched = state.schedule[matchId];
+  if(confirmed){
+    if(!sched || !sched.date) return "";
+    return '<span class="sched-chip sched-done">'+formatDateOnly(sched)+' 경기종료</span>';
+  }
   if(!canEdit()){
     if(!sched || !sched.date) return "";
     return '<span class="sched-chip" style="cursor:default;">📅 '+formatSchedule(sched)+'</span>';
@@ -1332,7 +1350,7 @@ function matchCardHtml(m){
     actions = '<div class="match-actions">'+
       '<button class="btn btn-confirm" data-action="confirm" data-match="'+m.id+'" '+(canConfirm(m) ? "" : "disabled")+'>확정</button>'+
       (m.confirmed ? '<button class="btn btn-edit" data-action="cancel-edit" data-match="'+m.id+'">취소</button>' : '')+
-      scheduleControlHtml(m.id)+
+      scheduleControlHtml(m.id, m.confirmed)+
       '</div>'+
       '<div class="validation" id="val-'+m.id+'"></div>';
   } else {
@@ -1341,7 +1359,7 @@ function matchCardHtml(m){
     actions = '<div class="match-actions match-actions-done">'+
       editIconHtml+
       (kindText ? '<span class="kind-label-inline">'+kindText+'</span>' : '')+
-      scheduleControlHtml(m.id)+
+      scheduleControlHtml(m.id, m.confirmed)+
       '</div>';
   }
   return '<div class="match-card">'+body+actions+voteBlockHtml(m)+'</div>';
@@ -1476,12 +1494,12 @@ function gfMatchHtml(m, label, tag){
     actions = '<div class="match-actions">'+
       '<button class="btn btn-confirm" data-action="confirm" data-match="'+m.id+'" '+(canConfirm(m) ? "" : "disabled")+'>확정</button>'+
       (m.confirmed ? '<button class="btn btn-edit" data-action="cancel-edit" data-match="'+m.id+'">취소</button>' : '')+
-      scheduleControlHtml(m.id)+
+      scheduleControlHtml(m.id, m.confirmed)+
       '</div><div class="validation" id="val-'+m.id+'"></div>';
   } else {
     var editIconHtml = canEdit() ? '<button class="btn btn-icon" data-action="edit" data-match="'+m.id+'" title="결과 수정" aria-label="결과 수정">✏️</button>' : '';
     actions = '<div class="match-actions match-actions-done">'+editIconHtml+
-      scheduleControlHtml(m.id)+
+      scheduleControlHtml(m.id, m.confirmed)+
       '</div>';
   }
   return '<div class="gf-match"><div class="gf-label">'+label+'</div>'+body+actions+voteBlockHtml(m)+'</div>';
