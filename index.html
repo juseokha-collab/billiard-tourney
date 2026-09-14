@@ -346,6 +346,7 @@ details.info p + p{margin-top:8px;}
 .match-card .bye-text{font-size:0.8rem; color:var(--ink-soft); display:flex; align-items:center; gap:6px; padding:4px 2px;}
 .preview-wait{display:flex; flex-direction:column; gap:5px; padding:9px 8px;}
 .preview-wait .wait-head{display:flex; align-items:center; gap:7px; font-size:0.86rem; font-weight:700; color:var(--ink);}
+.preview-wait .wait-head .wait-status{font-weight:400; font-size:0.8rem; color:var(--ink-soft);}
 .preview-wait .wait-sub{font-size:0.74rem; color:var(--ink-soft); padding-left:25px;}
 .kind-label{font-size:0.64rem; font-weight:700; color:var(--gold); text-transform:uppercase; letter-spacing:0.03em; margin-bottom:4px;}
 .player-row{
@@ -1041,7 +1042,7 @@ function generateRound(prefix, roundNum, poolAsc, results, forcedWaiting){
     knownLosers.forEach(function(p, i){
       matches.push({
         id: prefix+"-"+roundNum+"-Rwait"+i, waiting:true, p1:p,
-        waitNote: pendingNames+' 경기의 패자를 기다립니다'
+        waitNote: pendingNames+' 경기의 패자'
       });
     });
 
@@ -1054,7 +1055,7 @@ function generateRound(prefix, roundNum, poolAsc, results, forcedWaiting){
     knownWinners.forEach(function(p, i){
       extraCards.push({
         id: prefix+"-"+roundNum+"-Uwait"+i, waiting:true, p1:p,
-        waitNote: pendingNames+' 경기의 승자를 기다립니다'
+        waitNote: pendingNames+' 경기 승자'
       });
     });
 
@@ -1378,7 +1379,7 @@ function matchCardHtml(m){
       return '<div class="match-card bye"><div class="bye-text">'+ballHtml(m.p1,18)+'<b>'+m.p1.name+'</b>&nbsp;부전승</div></div>';
     }
     return '<div class="match-card bye preview-wait">'+
-      '<div class="wait-head">'+ballHtml(m.p1,18)+'<b>'+m.p1.name+'</b> 대기 중</div>'+
+      '<div class="wait-head">'+ballHtml(m.p1,18)+'<b>'+m.p1.name+'</b> <span class="wait-status">대기 중</span></div>'+
       '<div class="wait-sub">'+(m.waitNote || "패자부활전 결과를 기다립니다")+'</div>'+
       '</div>';
   }
