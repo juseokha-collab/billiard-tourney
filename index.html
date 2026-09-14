@@ -1025,14 +1025,42 @@ function generateRound(prefix, roundNum, poolAsc, results, forcedWaiting){
   var aComplete = aMatches.every(function(m){ return m.confirmed; });
   if(!aComplete){
     matches.push({id: prefix+"-"+roundNum+"-WAIT", waiting:true, p1:waiting, waitKind:"bye"});
+
+    // Even before EVERY preliminary (A) match is in, whichever ones ARE
+    // confirmed already tell us a winner and a loser who are themselves
+    // just waiting on the other still-open A match -- the winner for the
+    // deferred 승자매치(U), the loser for this round's 패자부활전(R). Show
+    // each of those as its own preview card (naming the actual pending
+    // match) instead of leaving the whole round blank until both A
+    // matches finish.
+    var pendingA = aMatches.filter(function(m){ return !m.confirmed; });
+    var pendingNames = pendingA.map(function(m){ return m.p1.name+' · '+m.p2.name; }).join(', ');
+    var knownWinners = aMatches.filter(function(m){ return m.confirmed; }).map(function(m){ return m.winner; });
+    var knownLosers  = aMatches.filter(function(m){ return m.confirmed; }).map(function(m){ return m.loser; });
+
+    knownLosers.forEach(function(p, i){
+      matches.push({
+        id: prefix+"-"+roundNum+"-Rwait"+i, waiting:true, p1:p,
+        waitNote: pendingNames+' 경기의 패자를 기다립니다'
+      });
+    });
+
     // The direct-advance player's real 2차전 opponent (the 패자부활전
     // winner) can't be known until the two preliminary matches above are
     // both confirmed -- but there's no reason to hide that this player IS
     // already waiting in the next round too, so a one-card preview of that
     // round is synthesized here the same way the extraRound normally works.
+    var extraCards = [{id: prefix+"-"+roundNum+"-WAIT2", waiting:true, p1:waiting}];
+    knownWinners.forEach(function(p, i){
+      extraCards.push({
+        id: prefix+"-"+roundNum+"-Uwait"+i, waiting:true, p1:p,
+        waitNote: pendingNames+' 경기의 승자를 기다립니다'
+      });
+    });
+
     return {
       matches:matches, complete:false, winners:null, losers:null,
-      extraRound: {matches:[{id: prefix+"-"+roundNum+"-WAIT2", waiting:true, p1:waiting}]}
+      extraRound: {matches: extraCards}
     };
   }
 
@@ -1351,7 +1379,7 @@ function matchCardHtml(m){
     }
     return '<div class="match-card bye preview-wait">'+
       '<div class="wait-head">'+ballHtml(m.p1,18)+'<b>'+m.p1.name+'</b> 대기 중</div>'+
-      '<div class="wait-sub">패자부활전 결과를 기다립니다</div>'+
+      '<div class="wait-sub">'+(m.waitNote || "패자부활전 결과를 기다립니다")+'</div>'+
       '</div>';
   }
   var editingSet = window.__editing || {};
