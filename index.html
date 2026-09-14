@@ -1042,6 +1042,7 @@ function generateRound(prefix, roundNum, poolAsc, results, forcedWaiting){
     knownLosers.forEach(function(p, i){
       matches.push({
         id: prefix+"-"+roundNum+"-Rwait"+i, waiting:true, p1:p,
+        waitStatus: "패자부활전 대기중",
         waitNote: pendingNames+' 경기의 패자'
       });
     });
@@ -1379,7 +1380,7 @@ function matchCardHtml(m){
       return '<div class="match-card bye"><div class="bye-text">'+ballHtml(m.p1,18)+'<b>'+m.p1.name+'</b>&nbsp;부전승</div></div>';
     }
     return '<div class="match-card bye preview-wait">'+
-      '<div class="wait-head">'+ballHtml(m.p1,18)+'<b>'+m.p1.name+'</b> <span class="wait-status">대기 중</span></div>'+
+      '<div class="wait-head">'+ballHtml(m.p1,18)+'<b>'+m.p1.name+'</b> <span class="wait-status">'+(m.waitStatus || "대기 중")+'</span></div>'+
       '<div class="wait-sub">'+(m.waitNote || "패자부활전 결과를 기다립니다")+'</div>'+
       '</div>';
   }
