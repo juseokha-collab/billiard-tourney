@@ -477,6 +477,17 @@ details.info p + p{margin-top:8px;}
 .gf-wait{border-style:dashed; flex:0 1 320px;}
 .gf-wait .wait-head{display:flex; align-items:center; gap:8px; font-size:1rem; font-weight:700;}
 .gf-wait .wait-status{font-weight:400; font-size:0.82rem; color:rgba(238,242,230,0.7);}
+.gf-path{flex:1 1 320px;}
+.gf-path-desc{font-size:0.86rem; color:rgba(238,242,230,0.85); margin-bottom:10px;}
+.gf-path-desc b{color:var(--gold-soft);}
+.gf-path-list{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:6px;}
+.gf-path-list li{display:flex; align-items:center; flex-wrap:wrap; gap:6px; background:rgba(0,0,0,0.18); border-radius:10px; padding:8px 10px; font-weight:700; font-size:0.92rem;}
+.gf-path-list li > span{display:inline-flex; align-items:center; gap:5px;}
+.gf-path-list .pf-vs{font-size:0.72rem; font-weight:400; color:rgba(238,242,230,0.55); padding:0 2px;}
+.gf-path-list .pf-sub{color:var(--gold-soft); font-weight:600;}
+.gf-path-list .pf-sub small{font-weight:400; color:rgba(238,242,230,0.7); margin-left:3px; font-size:0.78rem;}
+.gf-path-list .pf-win{color:var(--gold-soft);}
+.gf-path-list .pf-done{margin-left:auto; font-size:0.7rem; font-weight:400; color:rgba(238,242,230,0.6);}
 .gf-wait .wait-sub{font-size:0.8rem; color:rgba(238,242,230,0.7); padding-left:30px; margin-top:6px;}
 
 /* ---------- result / champion reveal ---------- */
@@ -1542,7 +1553,8 @@ function renderGF(bracket){
       '<div class="gf-match gf-wait"><div class="gf-label">결승 1차전</div>'+
         '<div class="wait-head">'+ballHtml(known,22)+'<b>'+known.name+'</b> <span class="wait-status">'+knownLabel+' · 대기 중</span></div>'+
         '<div class="wait-sub">'+otherFinal+' 결과를 기다립니다</div>'+
-      '</div>';
+      '</div>'+
+      otherFinalPathHtml(bracket, bracket.wbChampion ? "LB" : "WB", otherFinal);
     return;
   }
   var html = "";
@@ -1551,6 +1563,41 @@ function renderGF(bracket){
     html += gfMatchHtml(bracket.gf2, "결승 2차전 · 리셋매치", "reset");
   }
   document.getElementById("gfMatches").innerHTML = html;
+}
+
+// While one side is still playing, explain how its final gets decided:
+// the latest round's matches (whose winners meet in that side's final),
+// with a waiting player's pending 패자부활전 spelled out.
+function otherFinalPathHtml(bracket, type, finalLabel){
+  var rounds = bracket.rounds.filter(function(r){ return r.type === type && (type === "LB" || r.num > 1); })
+    .sort(function(a,b){ return a.num - b.num; });
+  if(!rounds.length) return "";
+  var last = rounds[rounds.length-1];
+  var labels = type === "LB" ? LB_ROUND_LABEL : WB_ROUND_LABEL;
+  var lastLabel = labels[last.num] || ((type === "LB" ? "패자 " : "승자 ")+last.num+"라운드");
+  var allMatches = [];
+  rounds.forEach(function(r){ allMatches = allMatches.concat(r.matches); });
+  function nm(p, m){
+    var won = m && m.confirmed && m.winner === p;
+    return '<span class="'+(won ? "pf-win" : "")+'">'+ballHtml(p,16)+p.name+'</span>';
+  }
+  var items = [];
+  last.matches.forEach(function(m){
+    if(m.p2){
+      items.push(nm(m.p1, m)+'<span class="pf-vs">vs</span>'+nm(m.p2, m)+(m.confirmed ? '<span class="pf-done">종료</span>' : ''));
+    } else if(m.waiting && /-WAIT2$/.test(m.id)){
+      var r = allMatches.find(function(x){ return x.id === m.id.replace(/WAIT2$/, "R"); });
+      var opp = r && r.p2
+        ? '<span class="pf-sub">패자부활전 승자<small>('+r.p1.name+' vs '+r.p2.name+')</small></span>'
+        : '<span class="pf-sub">패자부활전 승자</span>';
+      items.push(nm(m.p1)+'<span class="pf-vs">vs</span>'+opp);
+    }
+  });
+  if(!items.length) return "";
+  return '<div class="gf-match gf-path"><div class="gf-label">'+finalLabel+' 대진</div>'+
+    '<div class="gf-path-desc">'+finalLabel+'은 <b>'+lastLabel+'</b> 경기의 승자간 경기입니다</div>'+
+    '<ul class="gf-path-list">'+items.map(function(t){ return '<li>'+t+'</li>'; }).join("")+'</ul>'+
+    '</div>';
 }
 
 function gfMatchHtml(m, label, tag){
