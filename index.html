@@ -474,6 +474,10 @@ details.info p + p{margin-top:8px;}
 .gf-match .player-row.winner{background:rgba(233,207,154,0.22);}
 .gf-match .score-input{background:rgba(0,0,0,0.25); border-color:rgba(255,255,255,0.22); color:var(--felt-ink);}
 .gf-match .btn-edit{border-color:rgba(255,255,255,0.3); color:rgba(238,242,230,0.8);}
+.gf-wait{border-style:dashed; flex:0 1 320px;}
+.gf-wait .wait-head{display:flex; align-items:center; gap:8px; font-size:1rem; font-weight:700;}
+.gf-wait .wait-status{font-weight:400; font-size:0.82rem; color:rgba(238,242,230,0.7);}
+.gf-wait .wait-sub{font-size:0.8rem; color:rgba(238,242,230,0.7); padding-left:30px; margin-top:6px;}
 
 /* ---------- result / champion reveal ---------- */
 .result-panel{
@@ -1523,11 +1527,24 @@ function renderBracketTree(bracket){
 
 function renderGF(bracket){
   var section = document.getElementById("gfSection");
-  if(!bracket.wbChampion || !bracket.lbChampion){
+  if(!bracket.wbChampion && !bracket.lbChampion){
     section.style.display = "none";
     return;
   }
   section.style.display = "";
+  // Only one side's champion is decided so far -- show them waiting in the
+  // final so the bracket's next step is visible before the other side ends.
+  if(!bracket.wbChampion || !bracket.lbChampion){
+    var known = bracket.wbChampion || bracket.lbChampion;
+    var knownLabel = bracket.wbChampion ? "승자조 챔피언" : "패자조 챔피언";
+    var otherFinal = bracket.wbChampion ? "패자 최종전" : "승자 최종전";
+    document.getElementById("gfMatches").innerHTML =
+      '<div class="gf-match gf-wait"><div class="gf-label">결승 1차전</div>'+
+        '<div class="wait-head">'+ballHtml(known,22)+'<b>'+known.name+'</b> <span class="wait-status">'+knownLabel+' · 대기 중</span></div>'+
+        '<div class="wait-sub">'+otherFinal+' 결과를 기다립니다</div>'+
+      '</div>';
+    return;
+  }
   var html = "";
   html += gfMatchHtml(bracket.gf1, "결승 1차전", "wbChampion");
   if(bracket.needsReset){
