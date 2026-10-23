@@ -487,7 +487,8 @@ details.info p + p{margin-top:8px;}
 .gf-path-list .pf-sub{color:var(--gold-soft); font-weight:600;}
 .gf-path-list .pf-sub small{font-weight:400; color:rgba(238,242,230,0.7); margin-left:3px; font-size:0.78rem;}
 .gf-path-list .pf-win{color:var(--gold-soft);}
-.gf-path-list .pf-done{margin-left:auto; font-size:0.7rem; font-weight:400; color:rgba(238,242,230,0.6);}
+.gf-path-list .pf-arrow{color:rgba(238,242,230,0.5); font-weight:400; padding:0 2px;}
+.gf-path-list .pf-adv{color:var(--gold-soft); font-weight:700; font-size:0.86rem;}
 .gf-wait .wait-sub{font-size:0.8rem; color:rgba(238,242,230,0.7); padding-left:30px; margin-top:6px;}
 
 /* ---------- result / champion reveal ---------- */
@@ -1113,6 +1114,23 @@ function generateRound(prefix, roundNum, poolAsc, results, forcedWaiting){
   }
 
   var oddComplete = !!upperRep && !!lowerRep;
+  // One of the two next-round spots is already settled -- preview it as a
+  // waiting card that names the match still deciding its opponent.
+  var nextPreview = null;
+  if(!oddComplete && (upperRep || lowerRep)){
+    var pendingDesc;
+    if(upperRep){
+      pendingDesc = xMatch
+        ? xMatch.p1.name+' vs '+xMatch.p2.name+' 경기 승자를 기다립니다'
+        : waiting.name+' vs 패자부활전 승자 결과를 기다립니다';
+    } else {
+      pendingDesc = uMatch.p1.name+' vs '+uMatch.p2.name+' 경기 승자를 기다립니다';
+    }
+    nextPreview = [{
+      id: prefix+"-"+roundNum+"-NEXTwait", waiting:true, p1: upperRep || lowerRep,
+      waitStatus: "진출 · 대기 중", waitNote: pendingDesc
+    }];
+  }
   var oddLosers = null;
   if(oddComplete){
     oddLosers = [];
@@ -1124,7 +1142,8 @@ function generateRound(prefix, roundNum, poolAsc, results, forcedWaiting){
     matches: matches, complete: oddComplete,
     winners: oddComplete ? [upperRep, lowerRep] : null,
     losers: oddLosers,
-    extraRound: {matches: extraMatches}
+    extraRound: {matches: extraMatches},
+    nextPreview: nextPreview
   };
 }
 
@@ -1185,7 +1204,10 @@ function computeBracket(results){
         wbRoundNum++;
         rounds.push({type:"WB", num:wbRoundNum, matches:rg.extraRound.matches});
       }
-      if(!rg.complete) break;
+      if(!rg.complete){
+        if(rg.nextPreview) rounds.push({type:"WB", num:wbRoundNum+1, matches:rg.nextPreview, preview:true});
+        break;
+      }
       if(wasWbFinal) wbRunnerUp = rg.losers[0];
       wbPool = rg.winners;
     }
@@ -1203,7 +1225,10 @@ function computeBracket(results){
         lbRoundNum++;
         rounds.push({type:"LB", num:lbRoundNum, matches:rg2.extraRound.matches});
       }
-      if(!rg2.complete) break;
+      if(!rg2.complete){
+        if(rg2.nextPreview) rounds.push({type:"LB", num:lbRoundNum+1, matches:rg2.nextPreview, preview:true});
+        break;
+      }
       lbPool = rg2.winners;
     }
     if(lbPool.length === 1) lbChampion = lbPool[0];
@@ -1509,7 +1534,7 @@ function renderBracketTree(bracket){
   // look-ahead preview (the direct-advance player's real opponent isn't
   // decided yet) -- worth a note explaining what they're waiting for.
   function allWaiting(rnd){
-    return rnd.matches.length > 0 && rnd.matches.every(function(m){ return m.waiting; });
+    return !rnd.preview && rnd.matches.length > 0 && rnd.matches.every(function(m){ return m.waiting; });
   }
 
   var html = "";
@@ -1569,7 +1594,7 @@ function renderGF(bracket){
 // the latest round's matches (whose winners meet in that side's final),
 // with a waiting player's pending 패자부활전 spelled out.
 function otherFinalPathHtml(bracket, type, finalLabel){
-  var rounds = bracket.rounds.filter(function(r){ return r.type === type && (type === "LB" || r.num > 1); })
+  var rounds = bracket.rounds.filter(function(r){ return r.type === type && !r.preview && (type === "LB" || r.num > 1); })
     .sort(function(a,b){ return a.num - b.num; });
   if(!rounds.length) return "";
   var last = rounds[rounds.length-1];
@@ -1584,7 +1609,8 @@ function otherFinalPathHtml(bracket, type, finalLabel){
   var items = [];
   last.matches.forEach(function(m){
     if(m.p2){
-      items.push(nm(m.p1, m)+'<span class="pf-vs">vs</span>'+nm(m.p2, m)+(m.confirmed ? '<span class="pf-done">종료</span>' : ''));
+      items.push(nm(m.p1, m)+'<span class="pf-vs">vs</span>'+nm(m.p2, m)+
+        (m.confirmed ? '<span class="pf-arrow">›</span><span class="pf-adv">'+m.winner.name+' '+finalLabel+' 진출</span>' : ''));
     } else if(m.waiting && /-WAIT2$/.test(m.id)){
       var r = allMatches.find(function(x){ return x.id === m.id.replace(/WAIT2$/, "R"); });
       var opp = r && r.p2
