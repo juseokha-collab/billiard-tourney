@@ -249,6 +249,12 @@ button{font-family:inherit;}
 .pot-figure .amount{font-size:2.1rem; font-weight:800; font-family:'Big Shoulders Display'; color:var(--gold); line-height:1;}
 .pot-figure .amount .won{font-size:1.1rem; margin-left:4px; font-family:'Libre Franklin'; font-weight:700;}
 .pot-meta{font-size:0.85rem; color:var(--ink-soft);}
+.pot-scen{display:flex; flex-direction:column; gap:6px;}
+.pot-scen-row{display:flex; align-items:center; flex-wrap:wrap; gap:4px 14px; background:rgba(176,132,40,0.09); border-radius:10px; padding:6px 12px;}
+.pot-scen-row .ps-head{display:inline-flex; align-items:center; gap:5px; color:var(--ink); min-width:190px;}
+.pot-scen-row .ps-amt{color:var(--ink-soft);}
+.pot-scen-row .ps-amt b{color:var(--gold); font-family:'Big Shoulders Display'; font-size:1.05rem; font-weight:800;}
+.pot-scen-row .ps-note{font-size:0.72rem; color:var(--ink-soft); opacity:0.75;}
 .funding-control{
   margin-left:auto;
   display:flex; align-items:center; gap:10px;
@@ -1676,9 +1682,40 @@ function renderPot(bracket){
   if(optionNote) optionNote.style.display = "none";
   var pot = bracket.potMatches * state.funding;
   document.getElementById("potAmount").innerHTML = fmtWon(pot) + '<span class="won">원</span>';
+  var scen = finalScenarioHtml(bracket);
+  if(scen){
+    document.getElementById("potMeta").innerHTML = scen;
+    return;
+  }
   var meta = bracket.potMatches + '경기 확정 · 게임당 ' + fmtWon(state.funding) + '원';
   if(bracket.complete) meta += ' · 토너먼트 종료';
   document.getElementById("potMeta").textContent = meta;
+}
+
+// Once the grand final is set, show what each finalist takes home in each
+// possible outcome (every extra game adds to the pot; 우승 60% / 준우승 30%).
+function finalScenarioHtml(bracket){
+  var gf1 = bracket.gf1;
+  if(!gf1 || bracket.complete) return "";
+  var wb = bracket.wbChampion, lb = bracket.lbChampion;
+  var scenarios = [];
+  if(!gf1.confirmed){
+    scenarios.push({champ:wb, runner:lb, games:1, how:"우승 시"});
+    scenarios.push({champ:lb, runner:wb, games:2, how:"2게임 모두 이겨 우승 시"});
+  } else if(bracket.gf2 && !bracket.gf2.confirmed){
+    scenarios.push({champ:wb, runner:lb, games:1, how:"리셋매치 승리 시"});
+    scenarios.push({champ:lb, runner:wb, games:1, how:"리셋매치 승리 시"});
+  }
+  if(!scenarios.length) return "";
+  return '<div class="pot-scen">'+scenarios.map(function(s){
+    var pot = (bracket.potMatches + s.games) * state.funding;
+    return '<div class="pot-scen-row">'+
+      '<span class="ps-head">'+ballHtml(s.champ,16)+'<b>'+s.champ.name+'</b> '+s.how+'</span>'+
+      '<span class="ps-amt">'+s.champ.name+' <b>'+fmtWon(Math.round(pot*0.6))+'원</b></span>'+
+      '<span class="ps-amt">'+s.runner.name+' <b>'+fmtWon(Math.round(pot*0.3))+'원</b></span>'+
+      '<span class="ps-note">POT '+fmtWon(pot)+'원 기준</span>'+
+    '</div>';
+  }).join("")+'</div>';
 }
 
 function renderFixtures(bracket){
