@@ -249,10 +249,16 @@ button{font-family:inherit;}
 .pot-figure .amount{font-size:2.1rem; font-weight:800; font-family:'Big Shoulders Display'; color:var(--gold); line-height:1;}
 .pot-figure .amount .won{font-size:1.1rem; margin-left:4px; font-family:'Libre Franklin'; font-weight:700;}
 .pot-meta{font-size:0.85rem; color:var(--ink-soft);}
-.pot-scen{display:flex; flex-direction:column; gap:6px;}
-.pot-scen-row{display:flex; align-items:center; flex-wrap:wrap; gap:4px 14px; background:rgba(176,132,40,0.09); border-radius:10px; padding:6px 12px;}
-.pot-scen-row .ps-head{display:inline-flex; align-items:center; gap:5px; color:var(--ink); min-width:190px;}
-.pot-scen-row .ps-amt{color:var(--ink-soft);}
+.pot-scen{display:grid; grid-template-columns:auto auto auto auto; row-gap:6px;}
+.pot-scen-row{display:grid; grid-column:1 / -1; grid-template-columns:subgrid; align-items:center; column-gap:14px; background:rgba(176,132,40,0.09); border-radius:10px; padding:6px 12px;}
+.pot-scen-row .ps-head{display:inline-flex; align-items:center; gap:5px; color:var(--ink); padding-right:16px;}
+.pot-scen-row .ps-amt{color:var(--ink-soft); justify-self:end; text-align:right; white-space:nowrap;}
+.pot-scen-row .ps-note{justify-self:end; white-space:nowrap;}
+@media (max-width:640px){
+  .pot-scen{grid-template-columns:auto auto;}
+  .pot-scen-row .ps-head{grid-column:1 / -1;}
+  .pot-scen-row .ps-note{grid-column:1 / -1;}
+}
 .pot-scen-row .ps-amt b{color:var(--gold); font-family:'Big Shoulders Display'; font-size:1.05rem; font-weight:800;}
 .pot-scen-row .ps-note{font-size:0.72rem; color:var(--ink-soft); opacity:0.75;}
 .funding-control{
